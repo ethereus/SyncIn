@@ -1,3 +1,9 @@
 # SyncIn
 
-Drag these files into your project folder and replace any that already exist with these ones.
+How to use:
+
+- make sure flutter and cocoa pods are installed
+- download and open in visual studio
+- run "pod install" from the ios folder
+- run "flutter run" from the main folder
+
