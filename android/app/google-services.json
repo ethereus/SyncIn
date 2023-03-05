@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "74047084340",
+    "firebase_url": "https://syncin-6a734-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "syncin-6a734",
+    "storage_bucket": "syncin-6a734.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:74047084340:android:cf4c2bd247c66ad610f761",
+        "android_client_info": {
+          "package_name": "com.syncin.SyncIn"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "74047084340-b7d088r2q0oi1gdeq9pt9t1tvht1tds1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.syncin.SyncIn",
+            "certificate_hash": "a45d1fc5bc1f516b0cc055cb038801266ed268b4"
+          }
+        },
+        {
+          "client_id": "74047084340-b8i62hcbtfk67sq4p69bu87kvqr9qv4u.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDCw3UDdbxpmQH2VcbVcpOR8r97dO9sQCc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "74047084340-b8i62hcbtfk67sq4p69bu87kvqr9qv4u.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "74047084340-l0hup5cd7oibpc5pd2nrohlc076gq5ae.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.calendarDemo"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
