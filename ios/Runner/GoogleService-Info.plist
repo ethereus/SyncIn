@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>74047084340-pii6fg2262fg93nd8tju2885e08al10j.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.74047084340-pii6fg2262fg93nd8tju2885e08al10j</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>74047084340-aro627dibbgn4vgqd66jo8f38bt5ame8.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyDcSTIza5EcS4DMmglFQqMHyIT7MGeL5kw</string>
+	<key>GCM_SENDER_ID</key>
+	<string>74047084340</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.syncin.SyncIn</string>
+	<key>PROJECT_ID</key>
+	<string>syncin-6a734</string>
+	<key>STORAGE_BUCKET</key>
+	<string>syncin-6a734.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:74047084340:ios:afd88c711d1b376d10f761</string>
+	<key>DATABASE_URL</key>
+	<string>https://syncin-6a734-default-rtdb.europe-west1.firebasedatabase.app</string>
+</dict>
+</plist>
