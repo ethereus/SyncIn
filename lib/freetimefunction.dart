@@ -4,48 +4,47 @@ List findFreeTime(user1, user2, time1, time2) {
   List user2Events = getUserTime(user2, time1, time2);
 
   // freeTime will store all the time where the to users are free [[startTime,endTime]]
-  List freeTime = [];
+  List freeTimeList = [];
 
   // Variables for the logic of finding free time
   DateTime tempTime = time1;
-  var FreeTimeStart = true;
-  var temp;
+  var freeTimeStart = true;
+  DateTime temp = DateTime.now();
 
   while (tempTime.isBefore(time2)) {
     //Finds if the user has any events at the given time
-    bool user1Free = FreeTime(user1Events, tempTime);
-    bool user2Free = FreeTime(user2Events, tempTime);
+    bool user1Free = freeTime(user1Events, tempTime);
+    bool user2Free = freeTime(user2Events, tempTime);
 
     // checks if it is start of free time
-    if (user1Free && user2Free) {
-      if (FreeTimeStart) {
-        temp = tempTime;
-      }
+    if (user1Free && user2Free && freeTimeStart) {
+      temp = tempTime;
+      freeTimeStart = false;
     }
 
     // checks if it is end of the free time
-    if (!user1Free || !user2Free) {
-      if (!FreeTimeStart) {
-        freeTime.add([temp, tempTime]);
-      }
+    if ((!user1Free || !user2Free) && !freeTimeStart) {
+      freeTimeList.add([temp, tempTime]);
+      freeTimeStart = true;
     }
 
     // increments the tempTime for every 5 minutes
     tempTime.add(const Duration(minutes: 5));
   }
 
-  return freeTime;
+  return freeTimeList;
 }
 
 List getUserTime(user, time1, time2) {
   /*------------------------------------
   The firebase events pull go here
   --------------------------------------*/
-  var Events; //Placeholder for the events pull
+  // ignore: prefer_typing_uninitialized_variables
+  var events; //Placeholder for the events pull
 
   List userEvents = [];
 
-  for (final event in Events) {
+  for (final event in events) {
     //Event is spilt into 2 part [0] being event details and event[1] being the start time and [2] being the end time
     if (event[1].isAfter(time1) && event[2].isBefore(time2)) {
       userEvents.add(event);
@@ -58,8 +57,8 @@ List getUserTime(user, time1, time2) {
   return userEvents;
 }
 
-bool FreeTime(Events, time) {
-  for (final event in Events) {
+bool freeTime(events, time) {
+  for (final event in events) {
     if (event[1].isAtSameMomentAs(time) ||
         event[2].isAtSameMomentAs(time) ||
         (event[1].isBefore(time) && event[2].isAfter(time))) {
