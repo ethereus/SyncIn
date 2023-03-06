@@ -23,6 +23,15 @@ How to use:
 - open the .xcodeproject file in xcode and use your account for signing
 - run "flutter run" from the main folder
 
+**macOS (currently broken as FireBase isn't initialised)**
+
+- make sure flutter is installed
+- install cocoa pods
+- download this code and open in visual studio
+- run "flutter pub get" from the main folder
+- open the .xcodeproject file in xcode and set the minimum version to 13.1
+- run "flutter run" from the main folder
+
 **WEB (currently broken as FireBase isn't initialised)**
 
 - make sure flutter is installed
