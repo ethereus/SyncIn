@@ -29,6 +29,5 @@ How to use:
 - download this code and open in visual studio
 - run "flutter pub get" from the main folder
 - run "flutter packages pub global activate webdev" from the main folder
-- run "webdev serve" from the main folder
-- "go to http://localhost:8080 in chrome
+- run "flutter run -d chrome" from the main folder
 
