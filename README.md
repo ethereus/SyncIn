@@ -23,7 +23,7 @@ How to use:
 - open the .xcodeproject file in xcode and use your account for signing
 - run "flutter run" from the main folder
 
-**WEB**
+**WEB (currently broken as FireBase isn't initialised)**
 
 - make sure flutter is installed
 - download this code and open in visual studio
