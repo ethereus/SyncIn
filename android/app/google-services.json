@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "74047084340-1oa5k7k4l6am6aa8osu0lhde6i64uhvv.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.syncin.SyncIn",
+            "certificate_hash": "cfea1082c49e01fc893d196cd1dec1fb386bb9e4"
+          }
+        },
+        {
           "client_id": "74047084340-b7d088r2q0oi1gdeq9pt9t1tvht1tds1.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
