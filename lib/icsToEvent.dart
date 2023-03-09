@@ -29,17 +29,16 @@ List icsToEvent(fileLocation) {
   return events;
 }
 
-
 DateTime parseDateString(String input) {
-  RegExp regex = RegExp(
-      r'^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}).(\d{3})Z$');
-  Match match = regex.firstMatch(input);
-  int year = int.parse(match.group(1));
-  int month = int.parse(match.group(2));
-  int day = int.parse(match.group(3));
-  int hour = int.parse(match.group(4));
-  int minute = int.parse(match.group(5));
-  int second = int.parse(match.group(6));
-  int millisecond = int.parse(match.group(7));
+  RegExp regex =
+      RegExp(r'^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}).(\d{3})Z$');
+  Match match = regex.firstMatch(input) as Match;
+  int year = int.parse(match.group(0)!);
+  int month = int.parse(match.group(1)!);
+  int day = int.parse(match.group(2)!);
+  int hour = int.parse(match.group(3)!);
+  int minute = int.parse(match.group(4)!);
+  int second = int.parse(match.group(5)!);
+  int millisecond = int.parse(match.group(6)!);
   return DateTime.utc(year, month, day, hour, minute, second, millisecond);
 }
