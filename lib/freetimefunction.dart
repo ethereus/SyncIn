@@ -45,8 +45,8 @@ List getUserTime(user, time1, time2) {
   List userEvents = [];
 
   for (final event in events) {
-    //Event is spilt into 2 part [0] being event details and event[1] being the start time and [2] being the end time
-    if (event[1].isAfter(time1) && event[2].isBefore(time2)) {
+    //Event is spilt into 2 part [0] being event details and event.startTime being the start time and .endTime being the end time
+    if (event.startTime.isAfter(time1) && event.endTime.isBefore(time2)) {
       userEvents.add(event);
     }
   }
@@ -59,9 +59,9 @@ List getUserTime(user, time1, time2) {
 
 bool freeTime(events, time) {
   for (final event in events) {
-    if (event[1].isAtSameMomentAs(time) ||
-        event[2].isAtSameMomentAs(time) ||
-        (event[1].isBefore(time) && event[2].isAfter(time))) {
+    if (event.startTime.isAtSameMomentAs(time) ||
+        event.endTime.isAtSameMomentAs(time) ||
+        (event.startTime.isBefore(time) && event.endTime.isAfter(time))) {
       return false;
     }
   }
