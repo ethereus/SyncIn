@@ -1,3 +1,5 @@
+import 'package:flutter_clean_calendar/clean_calendar_event.dart';
+
 List findFreeTime(user1, user2, time1, time2) {
   // Grabs all the users events within the time frame given
   List user1Events = getUserTime(user1, time1, time2);
@@ -6,30 +8,65 @@ List findFreeTime(user1, user2, time1, time2) {
   // freeTime will store all the time where the to users are free [[startTime,endTime]]
   List freeTimeList = [];
 
-  // Variables for the logic of finding free time
-  DateTime tempTime = time1;
-  var freeTimeStart = true;
-  DateTime temp = DateTime.now();
+  int events1Ptr = 0;
+  int events2Ptr = 0;
 
-  while (tempTime.isBefore(time2)) {
-    //Finds if the user has any events at the given time
-    bool user1Free = freeTime(user1Events, tempTime);
-    bool user2Free = freeTime(user2Events, tempTime);
-
-    // checks if it is start of free time
-    if (user1Free && user2Free && freeTimeStart) {
-      temp = tempTime;
-      freeTimeStart = false;
+  while (user1Events.length > events1Ptr && user2Events.length > events2Ptr) {
+    if (user1Events[events1Ptr].endTime.isBefore(user2Events[events2Ptr].startTime)) {
+      // The events do not overlap at all
+      events1Ptr++;
+    } else if (user2Events[events2Ptr].endTime.isBefore(user1Events[events1Ptr].startTime)) {
+      events2Ptr++;
+    } else if (user1Events[events1Ptr].startTime.isBefore(user2Events[events2Ptr].startTime) &&
+        user1Events[events1Ptr].endTime.isBefore(user2Events[events2Ptr].endTime) &&
+        user1Events[events1Ptr].endTime.isAfter(user2Events[events2Ptr].startTime)) {
+      // The start of user1Events[events1Ptr] overlaps with user2Events[events2Ptr]
+      freeTimeList.add(CleanCalendarEvent("Free Time",
+          startTime: user2Events[events2Ptr].startTime,
+          endTime: user1Events[events1Ptr].endTime));
+      events1Ptr++;
+    } else if (user1Events[events1Ptr].startTime.isBefore(user2Events[events2Ptr].endTime) &&
+        user1Events[events1Ptr].endTime.isAfter(user2Events[events2Ptr].endTime)) {
+      // user1Events[events1Ptr] completely contains user2Events[events2Ptr]
+      freeTimeList.add(CleanCalendarEvent("Free Time",
+          startTime: user2Events[events2Ptr].startTime,
+          endTime: user2Events[events2Ptr].endTime));
+      events2Ptr++;
+    } else if (user2Events[events2Ptr].startTime.isBefore(user1Events[events1Ptr].startTime) &&
+        user2Events[events2Ptr].endTime.isBefore(user1Events[events1Ptr].endTime) &&
+        user2Events[events2Ptr].endTime.isAfter(user1Events[events1Ptr].startTime)) {
+      // The start of user2Events[events2Ptr] overlaps with user1Events[events1Ptr]
+      freeTimeList.add(CleanCalendarEvent("Free Time",
+          startTime: user1Events[events1Ptr].startTime,
+          endTime: user2Events[events2Ptr].endTime));
+      events2Ptr++;
+    } else if (user2Events[events2Ptr].startTime.isBefore(user1Events[events1Ptr].endTime) &&
+        user2Events[events2Ptr].endTime.isAfter(user1Events[events1Ptr].endTime)) {
+      // user2Events[events2Ptr] completely contains user1Events[events1Ptr]
+      freeTimeList.add(CleanCalendarEvent("Free Time",
+          startTime: user1Events[events1Ptr].startTime,
+          endTime: user1Events[events1Ptr].endTime));
+      events1Ptr++;
+    } else {
+      // The events overlap, but neither completely contains the other
+      DateTime overlapStart = user1Events[events1Ptr]
+              .startTime
+              .isAfter(user2Events[events2Ptr].startTime)
+          ? user1Events[events1Ptr].startTime
+          : user2Events[events2Ptr].startTime;
+      DateTime overlapEnd = user1Events[events1Ptr]
+              .endTime
+              .isBefore(user2Events[events2Ptr].endTime)
+          ? user1Events[events1Ptr].endTime
+          : user2Events[events2Ptr].endTime;
+      freeTimeList.add(CleanCalendarEvent("Free Time",
+          startTime: overlapStart, endTime: overlapEnd));
+      if (overlapStart = user1Events[events1Ptr].startTime) {
+        events1Ptr++;
+      } else if (overlapStart = user2Events[events2Ptr].startTime) {
+        events2Ptr++;
+      }
     }
-
-    // checks if it is end of the free time
-    if ((!user1Free || !user2Free) && !freeTimeStart) {
-      freeTimeList.add([temp, tempTime]);
-      freeTimeStart = true;
-    }
-
-    // increments the tempTime for every 5 minutes
-    tempTime.add(const Duration(minutes: 5));
   }
 
   return freeTimeList;
@@ -52,18 +89,7 @@ List getUserTime(user, time1, time2) {
   }
 
   // .sort might need more work but we will see when testing
-  userEvents.sort();
+  userEvents.sort(((a, b) => a.startTime.compareTo(b.startTime)));
 
   return userEvents;
-}
-
-bool freeTime(events, time) {
-  for (final event in events) {
-    if (event.startTime.isAtSameMomentAs(time) ||
-        event.endTime.isAtSameMomentAs(time) ||
-        (event.startTime.isBefore(time) && event.endTime.isAfter(time))) {
-      return false;
-    }
-  }
-  return true;
 }
