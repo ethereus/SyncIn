@@ -4,11 +4,9 @@ Future<void> uploadEventDataToFirebase(List<Event> events) async {
 
   for (final event in events) {
     final Map<String, dynamic> eventData = {
-      'title': event.title,
-      'description': event.description,
+      'summary': event.summary,
       'startTime': event.start.millisecondsSinceEpoch,
       'endTime': event.end.millisecondsSinceEpoch,
-      'allDay': event.allDay,
     };
 
     await databaseRef.push().set(eventData);
