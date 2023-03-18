@@ -5,6 +5,11 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_clean_calendar/flutter_clean_calendar.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart' show Color, rootBundle;
+import 'package:flutter_clean_calendar/clean_calendar_event.dart';
+import 'package:icalendar_parser/icalendar_parser.dart';
+import 'dart:math' as math;
+import 'package:file_picker/file_picker.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -60,7 +65,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     // Clear the message input field
     _messageController.clear();
   }
-  
+
 
   @override
   Widget build(BuildContext context) {
@@ -125,6 +130,48 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class IcsScreen extends StatefulWidget {
+  @override
+  _IcsScreenState createState() => _IcsScreenState();
+}
+
+class _IcsScreenState extends State<IcsScreen> {
+  final _auth = FirebaseAuth.instance;
+  final _database = FirebaseDatabase.instance.reference();
+  final _messageController = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Upload'),
+        leading: IconButton(
+            icon: Image.asset('assets/images/calendar.png'),
+            onPressed: () {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (context) => DemoApp(),
+                ),
+              );
+          },
+          ),
+      ),
+      body: Center(
+        child: ElevatedButton(
+          onPressed: () async {
+            FilePickerResult? result = await FilePicker.platform.pickFiles();
+            if (result != null) {
+              PlatformFile file = result.files.first;
+              // upload the file to your app
+            }
+          },
+          child: Text("Select File"),
+        )
       ),
     );
   }
@@ -548,6 +595,7 @@ class DemoApp extends StatefulWidget {
 
 class _DemoAppState extends State<DemoApp> {
 
+
   void _handleData(date){
     setState(() {
       selectedDay = date;
@@ -607,11 +655,59 @@ class _DemoAppState extends State<DemoApp> {
     ],
   };
 
+  Future<void> uploadEventDataToFirebase(Map<DateTime, List<CleanCalendarEvent>> events) async {
+    final _database = FirebaseDatabase.instance.reference();
+    final FirebaseAuth _auth = FirebaseAuth.instance;
+
+    final currentUser = _auth.currentUser;
+
+    if (currentUser != null) {
+        
+      events.forEach((key,element) { 
+
+        for ( final event in element) {
+          _database.child('user_tables').child(currentUser.uid).push().set({
+          'day': key.toString(),
+          'summary': event.summary.toString(),
+          'startTime': event.startTime.toString(),
+          'endTime': event.endTime.toString(),
+        }
+        );
+        }
+      }
+      );
+
+    }
+  }
+
+  void createTableForCurrentUser() {
+
+    final FirebaseAuth _auth = FirebaseAuth.instance;
+    final FirebaseDatabase _database = FirebaseDatabase.instance;
+
+    final currentUser = _auth.currentUser;
+    if (currentUser != null) {
+      final userTableRef = _database.reference().child('user_tables').child(currentUser.uid);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    createTableForCurrentUser();
+    uploadEventDataToFirebase(events);
     return Scaffold(
       appBar: AppBar(
         title: Text('Calendar'),
+        leading: IconButton(
+            icon: Image.asset('assets/images/upload.png'),
+            onPressed: () {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (context) => IcsScreen(),
+                ),
+              );
+          },
+          ),
         centerTitle: true,
         actions: [
           IconButton(
@@ -719,7 +815,3 @@ void showInputButton({required BuildContext context}) {
     },
   );
 }
-
-//https://pub.dev/packages/icalendar_parser
-
-//https://talkjs.com/build/flutter-chat/?utm_source=google&utm_medium=ppc&utm_campaign=frameworks&utm_term=flutter&gclid=CjwKCAiAxvGfBhB-EiwAMPakqj-L6MgkV_9j0_U3cjDeNxXEjYxr6X_GjbFwsiyPsJ8Xjxfiba9AMhoCojYQAvD_BwE
