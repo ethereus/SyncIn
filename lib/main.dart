@@ -1,3 +1,4 @@
+import 'package:chat_test/icsToEvent.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -10,6 +11,7 @@ import 'package:flutter_clean_calendar/clean_calendar_event.dart';
 import 'package:icalendar_parser/icalendar_parser.dart';
 import 'dart:math' as math;
 import 'package:file_picker/file_picker.dart';
+import 'dart:io';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -65,6 +67,44 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     // Clear the message input field
     _messageController.clear();
   }
+
+  //function go here fml
+
+  Future<List> icsToEvent(fileLocation) async {
+  List events = [];
+
+  // fileLocation needs to be in the format of 'assets/test_data_.ics'
+  final icsString = await rootBundle.loadString(fileLocation);
+  final iCalendar = ICalendar.fromString(icsString);
+  final iCalJSON = iCalendar.toJson();
+  final iCalData = iCalJSON['data'];
+  for (final event in iCalData) {
+    events.add(CleanCalendarEvent(event['summary'],
+        startTime: parseDateString(event['dtstart']),
+        endTime: parseDateString(event['dtend']),
+        color: Color((math.Random().nextDouble() * 0xFFFFFF).toInt())
+            .withOpacity(1.0)));
+  }
+  print("ITS HERE:");
+  print(events);
+  print("ITS AVOVE HERE");
+  return events;
+}
+
+DateTime parseDateString(String input) {
+  RegExp regex =
+      RegExp(r'^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}).(\d{3})Z$');
+  Match match = regex.firstMatch(input) as Match;
+  int year = int.parse(match.group(0)!);
+  int month = int.parse(match.group(1)!);
+  int day = int.parse(match.group(2)!);
+  int hour = int.parse(match.group(3)!);
+  int minute = int.parse(match.group(4)!);
+  int second = int.parse(match.group(5)!);
+  int millisecond = int.parse(match.group(6)!);
+  return DateTime.utc(year, month, day, hour, minute, second, millisecond);
+}
+
 
 
   @override
@@ -164,11 +204,15 @@ class _IcsScreenState extends State<IcsScreen> {
       body: Center(
         child: ElevatedButton(
           onPressed: () async {
-            FilePickerResult? result = await FilePicker.platform.pickFiles();
+            FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['ics']);
             if (result != null) {
-              PlatformFile file = result.files.first;
-              // upload the file to your app
+              PlatformFile file = result.files.single;
+
+              //we do here what must be done
+
+              icsToEvent(file.path);
             }
+
           },
           child: Text("Select File"),
         )
