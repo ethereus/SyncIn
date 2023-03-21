@@ -51,7 +51,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     // Listen for changes in the Firebase database
     _database.child('group_chat_messages').onChildAdded.listen((event) {
       setState(() {
-        var messageHolder = Map<String, dynamic>.from(event.snapshot.value as Map<dynamic, dynamic>);
+        var messageHolder = Map<String, dynamic>.from(
+            event.snapshot.value as Map<dynamic, dynamic>);
         _messages.add(messageHolder);
       });
     });
@@ -71,41 +72,39 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   //function go here fml
 
   Future<List> icsToEvent(fileLocation) async {
-  List events = [];
+    List events = [];
 
-  // fileLocation needs to be in the format of 'assets/test_data_.ics'
-  final icsString = await rootBundle.loadString(fileLocation);
-  final iCalendar = ICalendar.fromString(icsString);
-  final iCalJSON = iCalendar.toJson();
-  final iCalData = iCalJSON['data'];
-  for (final event in iCalData) {
-    events.add(CleanCalendarEvent(event['summary'],
-        startTime: parseDateString(event['dtstart']),
-        endTime: parseDateString(event['dtend']),
-        color: Color((math.Random().nextDouble() * 0xFFFFFF).toInt())
-            .withOpacity(1.0)));
+    // fileLocation needs to be in the format of 'assets/test_data_.ics'
+    final icsString = await rootBundle.loadString(fileLocation);
+    final iCalendar = ICalendar.fromString(icsString);
+    final iCalJSON = iCalendar.toJson();
+    final iCalData = iCalJSON['data'];
+    for (final event in iCalData) {
+      events.add(CleanCalendarEvent(event['summary'],
+          startTime: parseDateString(event['dtstart']),
+          endTime: parseDateString(event['dtend']),
+          color: Color((math.Random().nextDouble() * 0xFFFFFF).toInt())
+              .withOpacity(1.0)));
+    }
+    print("ITS HERE:");
+    print(events);
+    print("ITS AVOVE HERE");
+    return events;
   }
-  print("ITS HERE:");
-  print(events);
-  print("ITS AVOVE HERE");
-  return events;
-}
 
-DateTime parseDateString(String input) {
-  RegExp regex =
-      RegExp(r'^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}).(\d{3})Z$');
-  Match match = regex.firstMatch(input) as Match;
-  int year = int.parse(match.group(0)!);
-  int month = int.parse(match.group(1)!);
-  int day = int.parse(match.group(2)!);
-  int hour = int.parse(match.group(3)!);
-  int minute = int.parse(match.group(4)!);
-  int second = int.parse(match.group(5)!);
-  int millisecond = int.parse(match.group(6)!);
-  return DateTime.utc(year, month, day, hour, minute, second, millisecond);
-}
-
-
+  DateTime parseDateString(String input) {
+    RegExp regex =
+        RegExp(r'^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}).(\d{3})Z$');
+    Match match = regex.firstMatch(input) as Match;
+    int year = int.parse(match.group(0)!);
+    int month = int.parse(match.group(1)!);
+    int day = int.parse(match.group(2)!);
+    int hour = int.parse(match.group(3)!);
+    int minute = int.parse(match.group(4)!);
+    int second = int.parse(match.group(5)!);
+    int millisecond = int.parse(match.group(6)!);
+    return DateTime.utc(year, month, day, hour, minute, second, millisecond);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -121,7 +120,7 @@ DateTime parseDateString(String input) {
                   builder: (context) => DemoApp(),
                 ),
               );
-          },
+            },
           ),
           IconButton(
             icon: Image.asset('assets/images/logout.png'),
@@ -133,7 +132,7 @@ DateTime parseDateString(String input) {
                   ),
                 ),
               );
-          },
+            },
           ),
         ],
       ),
@@ -191,32 +190,51 @@ class _IcsScreenState extends State<IcsScreen> {
       appBar: AppBar(
         title: Text('Upload'),
         leading: IconButton(
-            icon: Image.asset('assets/images/calendar.png'),
-            onPressed: () {
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                  builder: (context) => DemoApp(),
-                ),
-              );
+          icon: Image.asset('assets/images/calendar.png'),
+          onPressed: () {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => DemoApp(),
+              ),
+            );
           },
-          ),
+        ),
       ),
       body: Center(
-        child: ElevatedButton(
-          onPressed: () async {
-            FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['ics']);
-            if (result != null) {
-              PlatformFile file = result.files.single;
+          child: ElevatedButton(
+        onPressed: () async {
+          FilePickerResult? result = await FilePicker.platform
+              .pickFiles(type: FileType.custom, allowedExtensions: ['ics']);
+          if (result != null) {
+            PlatformFile file = result.files.single;
 
-              //we do here what must be done
+            //we do here what must be done
 
-              icsToEvent(file.path);
+            List events = [];
+            String? pleaseWork;
+            // fileLocation needs to be in the format of 'assets/test_data_.ics'
+            final icsString = await rootBundle
+                .loadString(file.path!)
+                .then((String icsString) {
+              pleaseWork = icsString;
+            });
+            final iCalendar = ICalendar.fromString(pleaseWork!);
+            final iCalJSON = iCalendar.toJson();
+            final iCalData = iCalJSON['data'];
+            for (final event in iCalData) {
+              events.add(CleanCalendarEvent(event['summary'],
+                  startTime: DateTime.parse(event['dtstart']),
+                  endTime: DateTime.parse(event['dtend']),
+                  color: Color((math.Random().nextDouble() * 0xFFFFFF).toInt())
+                      .withOpacity(1.0)));
             }
-
-          },
-          child: Text("Select File"),
-        )
-      ),
+            for (final event in events) {
+              print(event);
+            }
+          }
+        },
+        child: Text("Select File"),
+      )),
     );
   }
 }
@@ -232,24 +250,24 @@ class Authentication {
     //uncomment to enable automatic signing in (should remove signing out button from user info if we do this)
 
     //if (user != null) {
-      //Navigator.of(context).pushReplacement(
-        //MaterialPageRoute(
-          //builder: (context) => GroupChatScreen(),
-        //),
-      //);
+    //Navigator.of(context).pushReplacement(
+    //MaterialPageRoute(
+    //builder: (context) => GroupChatScreen(),
+    //),
+    //);
     //}
 
     return firebaseApp;
   }
 
   static SnackBar customSnackBar({required String content}) {
-  return SnackBar(
-    backgroundColor: Colors.black,
-    content: Text(
-      content,
-      style: TextStyle(color: Colors.redAccent, letterSpacing: 0.5),
-    ),
-  );
+    return SnackBar(
+      backgroundColor: Colors.black,
+      content: Text(
+        content,
+        style: TextStyle(color: Colors.redAccent, letterSpacing: 0.5),
+      ),
+    );
   }
 
   static Future<void> signOut({required BuildContext context}) async {
@@ -300,8 +318,7 @@ class Authentication {
         } else if (e.code == 'invalid-credential') {
           ScaffoldMessenger.of(context).showSnackBar(
             Authentication.customSnackBar(
-              content:
-                  'Error occurred while accessing credentials. Try again.',
+              content: 'Error occurred while accessing credentials. Try again.',
             ),
           );
         }
@@ -316,7 +333,6 @@ class Authentication {
 
     return user;
   }
-
 }
 
 class GoogleSignInButton extends StatefulWidget {
@@ -348,9 +364,9 @@ class _GoogleSignInButtonState extends State<GoogleSignInButton> {
                 setState(() {
                   _isSigningIn = true;
                 });
-                
+
                 User? user =
-                  await Authentication.signInWithGoogle(context: context);
+                    await Authentication.signInWithGoogle(context: context);
 
                 setState(() {
                   _isSigningIn = false;
@@ -638,9 +654,7 @@ class DemoApp extends StatefulWidget {
 }
 
 class _DemoAppState extends State<DemoApp> {
-
-
-  void _handleData(date){
+  void _handleData(date) {
     setState(() {
       selectedDay = date;
       selectedEvent = events[selectedDay] ?? [];
@@ -668,22 +682,20 @@ class _DemoAppState extends State<DemoApp> {
   }
 
   DateTime? selectedDay;
-  List <CleanCalendarEvent>? selectedEvent;
+  List<CleanCalendarEvent>? selectedEvent;
 
-  final Map<DateTime,List<CleanCalendarEvent>> events = {
-    DateTime (DateTime.now().year,DateTime.now().month,DateTime.now().day):
-        [
-          CleanCalendarEvent('Event A',
-          startTime: DateTime(
-              DateTime.now().year,DateTime.now().month,DateTime.now().day,10,0),
-            endTime:  DateTime(
-                DateTime.now().year,DateTime.now().month,DateTime.now().day,12,0),
-            description: 'A special event',
-            color: Colors.blue),
-        ],
-
+  final Map<DateTime, List<CleanCalendarEvent>> events = {
+    DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day): [
+      CleanCalendarEvent('Event A',
+          startTime: DateTime(DateTime.now().year, DateTime.now().month,
+              DateTime.now().day, 10, 0),
+          endTime: DateTime(DateTime.now().year, DateTime.now().month,
+              DateTime.now().day, 12, 0),
+          description: 'A special event',
+          color: Colors.blue),
+    ],
     DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 2):
-    [
+        [
       CleanCalendarEvent('Event B',
           startTime: DateTime(DateTime.now().year, DateTime.now().month,
               DateTime.now().day + 2, 10, 0),
@@ -699,39 +711,35 @@ class _DemoAppState extends State<DemoApp> {
     ],
   };
 
-  Future<void> uploadEventDataToFirebase(Map<DateTime, List<CleanCalendarEvent>> events) async {
+  Future<void> uploadEventDataToFirebase(
+      Map<DateTime, List<CleanCalendarEvent>> events) async {
     final _database = FirebaseDatabase.instance.reference();
     final FirebaseAuth _auth = FirebaseAuth.instance;
 
     final currentUser = _auth.currentUser;
 
     if (currentUser != null) {
-        
-      events.forEach((key,element) { 
-
-        for ( final event in element) {
+      events.forEach((key, element) {
+        for (final event in element) {
           _database.child('user_tables').child(currentUser.uid).push().set({
-          'day': key.toString(),
-          'summary': event.summary.toString(),
-          'startTime': event.startTime.toString(),
-          'endTime': event.endTime.toString(),
+            'day': key.toString(),
+            'summary': event.summary.toString(),
+            'startTime': event.startTime.toString(),
+            'endTime': event.endTime.toString(),
+          });
         }
-        );
-        }
-      }
-      );
-
+      });
     }
   }
 
   void createTableForCurrentUser() {
-
     final FirebaseAuth _auth = FirebaseAuth.instance;
     final FirebaseDatabase _database = FirebaseDatabase.instance;
 
     final currentUser = _auth.currentUser;
     if (currentUser != null) {
-      final userTableRef = _database.reference().child('user_tables').child(currentUser.uid);
+      final userTableRef =
+          _database.reference().child('user_tables').child(currentUser.uid);
     }
   }
 
@@ -743,15 +751,15 @@ class _DemoAppState extends State<DemoApp> {
       appBar: AppBar(
         title: Text('Calendar'),
         leading: IconButton(
-            icon: Image.asset('assets/images/upload.png'),
-            onPressed: () {
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                  builder: (context) => IcsScreen(),
-                ),
-              );
+          icon: Image.asset('assets/images/upload.png'),
+          onPressed: () {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => IcsScreen(),
+              ),
+            );
           },
-          ),
+        ),
         centerTitle: true,
         actions: [
           IconButton(
@@ -762,7 +770,7 @@ class _DemoAppState extends State<DemoApp> {
                   builder: (context) => GroupChatScreen(),
                 ),
               );
-          },
+            },
           ),
           IconButton(
             icon: Image.asset('assets/images/logout.png'),
@@ -774,11 +782,11 @@ class _DemoAppState extends State<DemoApp> {
                   ),
                 ),
               );
-          },
+            },
           ),
         ],
       ),
-      body:  SafeArea(
+      body: SafeArea(
         child: Container(
           child: Calendar(
             startOnMonday: true,
@@ -790,7 +798,7 @@ class _DemoAppState extends State<DemoApp> {
             onRangeSelected: (range) {
               print('selected Day ${range.from},${range.to}');
             },
-            onDateSelected: (date){
+            onDateSelected: (date) {
               return _handleData(date);
             },
             events: events,
@@ -805,7 +813,7 @@ class _DemoAppState extends State<DemoApp> {
             ),
             hideBottomBar: false,
             hideArrows: false,
-            weekDays: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+            weekDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
           ),
         ),
       ),
