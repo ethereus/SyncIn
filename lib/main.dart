@@ -13,6 +13,8 @@ import 'dart:math' as math;
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 
+import 'package:path_provider/path_provider.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
@@ -117,7 +119,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
             onPressed: () {
               Navigator.of(context).pushReplacement(
                 MaterialPageRoute(
-                  builder: (context) => DemoApp(),
+                  builder: (context) => CalendarApp(),
                 ),
               );
             },
@@ -194,7 +196,7 @@ class _IcsScreenState extends State<IcsScreen> {
           onPressed: () {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
-                builder: (context) => DemoApp(),
+                builder: (context) => CalendarApp(),
               ),
             );
           },
@@ -208,16 +210,28 @@ class _IcsScreenState extends State<IcsScreen> {
           if (result != null) {
             PlatformFile file = result.files.single;
 
+            final appStorage = await getApplicationDocumentsDirectory();
+            final newFile =
+                File('${appStorage.path}/assests/icsFiles/${file.name}');
+
             //we do here what must be done
 
             List events = [];
             String? pleaseWork;
             // fileLocation needs to be in the format of 'assets/test_data_.ics'
+            //final icsLines = await File(file.path!).readAsLines();
+            //final iCalendar = ICalendar.fromLines(icsLines);
+
             final icsString = await rootBundle
-                .loadString(file.path!)
+                .loadString(newFile.path)
                 .then((String icsString) {
               pleaseWork = icsString;
             });
+
+            // The issue that the program doesn't recongize the cached .ics file as an asset so its unable to do shit
+            // A fix is store it somewhere under a reuseable name then delete after accessed and processed it.
+            // Then we update the .yaml file so it can recongize the asset and load it.
+
             final iCalendar = ICalendar.fromString(pleaseWork!);
             final iCalJSON = iCalendar.toJson();
             final iCalData = iCalJSON['data'];
@@ -228,6 +242,7 @@ class _IcsScreenState extends State<IcsScreen> {
                   color: Color((math.Random().nextDouble() * 0xFFFFFF).toInt())
                       .withOpacity(1.0)));
             }
+            newFile.delete();
             for (final event in events) {
               print(event);
             }
@@ -375,7 +390,7 @@ class _GoogleSignInButtonState extends State<GoogleSignInButton> {
                 if (user != null) {
                   Navigator.of(context).pushReplacement(
                     MaterialPageRoute(
-                      builder: (context) => DemoApp(),
+                      builder: (context) => CalendarApp(),
                     ),
                   );
                 }
@@ -648,12 +663,12 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
   }
 }
 
-class DemoApp extends StatefulWidget {
+class CalendarApp extends StatefulWidget {
   @override
-  _DemoAppState createState() => _DemoAppState();
+  _CalendarAppState createState() => _CalendarAppState();
 }
 
-class _DemoAppState extends State<DemoApp> {
+class _CalendarAppState extends State<CalendarApp> {
   void _handleData(date) {
     setState(() {
       selectedDay = date;
@@ -673,6 +688,124 @@ class _DemoAppState extends State<DemoApp> {
       events[date]!.remove(event);
     });
   }
+
+// ---free time functions---
+  
+List findFreeTime(user1, user2, time1, time2) {
+  // Grabs all the users events within the time frame given
+  List user1Events = getUserTime(user1, time1, time2);
+  List user2Events = getUserTime(user2, time1, time2);
+
+  // freeTime will store all the time where the to users are free [[startTime,endTime]]
+  List freeTimeList = [];
+
+  int events1Ptr = 0;
+  int events2Ptr = 0;
+
+  while (user1Events.length > events1Ptr && user2Events.length > events2Ptr) {
+    if (user1Events[events1Ptr].endTime.isBefore(user2Events[events2Ptr].startTime)) {
+      // The events do not overlap at all
+      events1Ptr++;
+    } else if (user2Events[events2Ptr].endTime.isBefore(user1Events[events1Ptr].startTime)) {
+      events2Ptr++;
+    } else if (user1Events[events1Ptr].startTime.isBefore(user2Events[events2Ptr].startTime) &&
+        user1Events[events1Ptr].endTime.isBefore(user2Events[events2Ptr].endTime) &&
+        user1Events[events1Ptr].endTime.isAfter(user2Events[events2Ptr].startTime)) {
+      // The start of user1Events[events1Ptr] overlaps with user2Events[events2Ptr]
+      freeTimeList.add(CleanCalendarEvent("Free Time",
+          startTime: user2Events[events2Ptr].startTime,
+          endTime: user1Events[events1Ptr].endTime));
+      events1Ptr++;
+    } else if (user1Events[events1Ptr].startTime.isBefore(user2Events[events2Ptr].endTime) &&
+        user1Events[events1Ptr].endTime.isAfter(user2Events[events2Ptr].endTime)) {
+      // user1Events[events1Ptr] completely contains user2Events[events2Ptr]
+      freeTimeList.add(CleanCalendarEvent("Free Time",
+          startTime: user2Events[events2Ptr].startTime,
+          endTime: user2Events[events2Ptr].endTime));
+      events2Ptr++;
+    } else if (user2Events[events2Ptr].startTime.isBefore(user1Events[events1Ptr].startTime) &&
+        user2Events[events2Ptr].endTime.isBefore(user1Events[events1Ptr].endTime) &&
+        user2Events[events2Ptr].endTime.isAfter(user1Events[events1Ptr].startTime)) {
+      // The start of user2Events[events2Ptr] overlaps with user1Events[events1Ptr]
+      freeTimeList.add(CleanCalendarEvent("Free Time",
+          startTime: user1Events[events1Ptr].startTime,
+          endTime: user2Events[events2Ptr].endTime));
+      events2Ptr++;
+    } else if (user2Events[events2Ptr].startTime.isBefore(user1Events[events1Ptr].endTime) &&
+        user2Events[events2Ptr].endTime.isAfter(user1Events[events1Ptr].endTime)) {
+      // user2Events[events2Ptr] completely contains user1Events[events1Ptr]
+      freeTimeList.add(CleanCalendarEvent("Free Time",
+          startTime: user1Events[events1Ptr].startTime,
+          endTime: user1Events[events1Ptr].endTime));
+      events1Ptr++;
+    } else {
+      // The events overlap, but neither completely contains the other
+      DateTime overlapStart = user1Events[events1Ptr]
+              .startTime
+              .isAfter(user2Events[events2Ptr].startTime)
+          ? user1Events[events1Ptr].startTime
+          : user2Events[events2Ptr].startTime;
+      DateTime overlapEnd = user1Events[events1Ptr]
+              .endTime
+              .isBefore(user2Events[events2Ptr].endTime)
+          ? user1Events[events1Ptr].endTime
+          : user2Events[events2Ptr].endTime;
+      freeTimeList.add(CleanCalendarEvent("Free Time",
+          startTime: overlapStart, endTime: overlapEnd));
+      if (overlapStart = user1Events[events1Ptr].startTime) {
+        events1Ptr++;
+      } else if (overlapStart = user2Events[events2Ptr].startTime) {
+        events2Ptr++;
+      }
+    }
+  }
+
+  return freeTimeList;
+}
+
+List getUserTime(user, time1, time2) {
+  /*------------------------------------
+  The firebase events pull go here
+  --------------------------------------*/
+  // ignore: prefer_typing_uninitialized_variables
+  var events; //Placeholder for the events pull
+
+  List userEvents = [];
+
+  for (final event in events) {
+    //Event is spilt into 2 part [0] being event details and event.startTime being the start time and .endTime being the end time
+    if (event.startTime.isAfter(time1) && event.endTime.isBefore(time2)) {
+      userEvents.add(event);
+    }
+  }
+
+  // .sort might need more work but we will see when testing
+  userEvents.sort(((a, b) => a.startTime.compareTo(b.startTime)));
+
+  return userEvents;
+}
+
+List findUserFreeTime(user) {
+  //Server call to grab events of user goes here
+  // ignore: unused_local_variable
+  List events = []; // Placeholder
+  events.sort(((a, b) => a.startTime.compareTo(b.startTime))); //Might need to override the compare function of cleanCalendarEvent
+  DateTime freeStartTime = DateTime.now();
+  List freeTime = [];
+  DateTime freeEndTime;
+  for (int i = 0; i < events.length; i++) {
+    freeEndTime = events[i].startTime;
+    freeTime.add(CleanCalendarEvent("Free Time",
+        startTime: freeStartTime,
+        endTime: freeEndTime,
+        color: const Color.fromARGB(0, 30, 255, 0)));
+    freeStartTime = events[i].endTime;
+  }
+
+  return freeTime;
+}
+
+// --- end find free time---
 
   @override
   void initState() {
