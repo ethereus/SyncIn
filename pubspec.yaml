@@ -55,6 +55,7 @@ dependencies:
   build_web_compilers: ^3.2.7
   icalendar_parser: ^1.1.1
   file_picker: ^5.2.6
+  path_provider: ^2.0.14
 
 dependency_overrides:
   intl: ^0.18.0-nullsafety.2
