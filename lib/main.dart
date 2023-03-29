@@ -1,4 +1,3 @@
-import 'package:chat_test/icsToEvent.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -12,7 +11,6 @@ import 'package:icalendar_parser/icalendar_parser.dart';
 import 'dart:math' as math;
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
-
 import 'package:path_provider/path_provider.dart';
 
 void main() async {
