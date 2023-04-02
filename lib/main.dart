@@ -4,9 +4,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_clean_calendar/flutter_clean_calendar.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart' show Color, rootBundle;
-import 'package:flutter_clean_calendar/clean_calendar_event.dart';
 import 'package:icalendar_parser/icalendar_parser.dart';
 import 'dart:math' as math;
 import 'package:file_picker/file_picker.dart';
@@ -675,18 +673,6 @@ class _CalendarAppState extends State<CalendarApp> {
     print(selectedDay);
   }
 
-  void addEvent(DateTime date, CleanCalendarEvent event) {
-    setState(() {
-      events[date] = (events[date] ?? [])..add(event);
-    });
-  }
-
-  void removeEvent(DateTime date, CleanCalendarEvent event) {
-    setState(() {
-      events[date]!.remove(event);
-    });
-  }
-
 // ---free time functions---
   
 List findFreeTime(user1, user2, time1, time2) {
@@ -948,47 +934,124 @@ List findUserFreeTime(user) {
           ),
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          showAddButton(events, context: context);
+        },
+        child: Icon(Icons.add),
+      ),
     );
   }
 }
 
-void showInputButton({required BuildContext context}) {
+void showAddButton(Map<DateTime, List<CleanCalendarEvent>> events, {required BuildContext context}) {
+  String title = '';
+  DateTime startTime = DateTime.now();
+  DateTime endTime = DateTime.now();
+  DateTime selectedDate = DateTime.now();
+
+  // Show modal bottom sheet with input fields and date picker
   showModalBottomSheet(
     context: context,
     builder: (BuildContext context) {
       return Container(
-        height: 200,
+        height: 350,
         child: Column(
           children: [
             TextField(
               decoration: InputDecoration(
-                hintText: "Enter event date",
+                hintText: "Enter event title",
               ),
-              onChanged: (date) {
-                print("The value entered is : $date");
+              onChanged: (enteredText) {
+                title = enteredText;
               },
             ),
-            TextField(
-              decoration: InputDecoration(
-                hintText: "Enter event description",
-              ),
-              onChanged: (description) {
-                print("The value entered is : $description");
+            ElevatedButton(
+              onPressed: () async {
+                // Show date picker and update selected date
+                final DateTime? picked = await showDatePicker(
+                  context: context,
+                  initialDate: selectedDate,
+                  firstDate: DateTime(DateTime.now().year - 5),
+                  lastDate: DateTime(DateTime.now().year + 5),
+                );
+                if (picked != null) {
+                  selectedDate = picked;
+                }
               },
+              child: Text('Select Date'),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Column(
+                  children: [
+                    Text('Start Time'),
+                    ElevatedButton(
+                      onPressed: () async {
+                        // Show time picker and update start time
+                        final TimeOfDay? picked = await showTimePicker(
+                          context: context,
+                          initialTime: TimeOfDay.now(),
+                        );
+                        if (picked != null) {
+                          startTime = DateTime(
+                            selectedDate.year,
+                            selectedDate.month,
+                            selectedDate.day,
+                            picked.hour,
+                            picked.minute,
+                          );
+                        }
+                      },
+                      child: Text('Select Start Time'),
+                    ),
+                  ],
+                ),
+                Column(
+                  children: [
+                    Text('End Time'),
+                    ElevatedButton(
+                      onPressed: () async {
+                        // Show time picker and update end time
+                        final TimeOfDay? picked = await showTimePicker(
+                          context: context,
+                          initialTime: TimeOfDay.now(),
+                        );
+                        if (picked != null) {
+                          endTime = DateTime(
+                            selectedDate.year,
+                            selectedDate.month,
+                            selectedDate.day,
+                            picked.hour,
+                            picked.minute,
+                          );
+                        }
+                      },
+                      child: Text('Select End Time'),
+                    ),
+                  ],
+                ),
+              ],
             ),
             ElevatedButton(
               child: Text("Add Event"),
               onPressed: () {
-                // Get user input from text fields
-                // Use the addEvent function to add the new event to the calendar
-                Navigator.pop(context);
-              },
-            ),
-            ElevatedButton(
-              child: Text("Remove Event"),
-              onPressed: () {
-                // Get user input for the event to be removed
-                // Use the removeEvent function to remove the event from the calendar
+                // Create a new CleanCalendarEvent object with the entered data
+                CleanCalendarEvent newEvent = CleanCalendarEvent(
+                  title,
+                  startTime: startTime,
+                  endTime: endTime,
+                  description: " ",
+                  color: Colors.green,
+                );
+                // Add the new event to the events map
+                if (events[selectedDate] != null) {
+                  events[selectedDate]!.add(newEvent);
+                } else {
+                  events[selectedDate] = [newEvent];
+                }
+                // Close the modal bottom sheet
                 Navigator.pop(context);
               },
             ),
