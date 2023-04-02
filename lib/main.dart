@@ -35,6 +35,7 @@ class MyApp extends StatelessWidget {
   }
 }
 
+
 class GroupChatScreen extends StatefulWidget {
   @override
   _GroupChatScreenState createState() => _GroupChatScreenState();
@@ -71,9 +72,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   void _sendMessage(String message) {
     // Add the message to the Firebase database
     _database.child('group_chat_messages/' + code).push().set({
-      'sender': _auth.currentUser!.uid,
+      'sender': _auth.currentUser!.displayName,
       'message': message,
-      'timestamp': ServerValue.timestamp,
+      'timestamp':  ServerValue.timestamp,
     });
     // Clear the message input field
     _messageController.clear();
@@ -365,6 +366,8 @@ class JoinGroupScreen extends StatefulWidget {
 
 class _JoinGroupScreenState extends State<JoinGroupScreen> {
   static String code = '.';
+  final _auth = FirebaseAuth.instance;
+  final _database = FirebaseDatabase.instance.reference();
 
   @override
   Widget build(BuildContext context) {
@@ -422,6 +425,15 @@ class _JoinGroupScreenState extends State<JoinGroupScreen> {
                         ),
                       ),
                       onPressed: () async {
+
+                        final String name = _auth.currentUser!.displayName.toString();
+
+                        _database.child('group_chat_messages/$code').push().set({
+                          'sender': "SyncIn",
+                          'message': "$name has joined the group.",
+                          'timestamp': ServerValue.timestamp,
+                        });
+
                         Navigator.of(context).pushReplacement(
                           MaterialPageRoute(
                             builder: (context) => CalendarApp(),
@@ -999,35 +1011,8 @@ class _CalendarAppState extends State<CalendarApp> {
 
   DateTime? selectedDay;
   List<CleanCalendarEvent>? selectedEvent;
-
-  final Map<DateTime, List<CleanCalendarEvent>> events = {
-    DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day): [
-      CleanCalendarEvent('Event A',
-          startTime: DateTime(DateTime.now().year, DateTime.now().month,
-              DateTime.now().day, 10, 0),
-          endTime: DateTime(DateTime.now().year, DateTime.now().month,
-              DateTime.now().day, 12, 0),
-          description: 'A special event',
-          color: Colors.blue),
-    ],
-    DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 2):
-        [
-      CleanCalendarEvent('Event B',
-          startTime: DateTime(DateTime.now().year, DateTime.now().month,
-              DateTime.now().day + 2, 10, 0),
-          endTime: DateTime(DateTime.now().year, DateTime.now().month,
-              DateTime.now().day + 2, 12, 0),
-          color: Colors.orange),
-      CleanCalendarEvent('Event C',
-          startTime: DateTime(DateTime.now().year, DateTime.now().month,
-              DateTime.now().day + 2, 14, 30),
-          endTime: DateTime(DateTime.now().year, DateTime.now().month,
-              DateTime.now().day + 2, 17, 0),
-          color: Colors.pink),
-    ],
-  };
   
-  final Map<DateTime, List<CleanCalendarEvent>> person1Events = {
+  final Map<DateTime, List<CleanCalendarEvent>> events = {
     DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day): [
       CleanCalendarEvent(
         'Busy',
@@ -1094,73 +1079,6 @@ class _CalendarAppState extends State<CalendarApp> {
     ]
   };
 
-  final Map<DateTime, List<CleanCalendarEvent>> person2Events = {
-    DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day): [
-      CleanCalendarEvent(
-        'Busy',
-        startTime: DateTime(DateTime.now().year, DateTime.now().month,
-            DateTime.now().day, 10, 45),
-        endTime: DateTime(DateTime.now().year, DateTime.now().month,
-            DateTime.now().day, 12, 15),
-      ),
-      CleanCalendarEvent(
-        'Busy',
-        startTime: DateTime(DateTime.now().year, DateTime.now().month,
-            DateTime.now().day, 13, 15),
-        endTime: DateTime(DateTime.now().year, DateTime.now().month,
-            DateTime.now().day, 14, 15),
-      ),
-      CleanCalendarEvent(
-        'Busy',
-        startTime: DateTime(DateTime.now().year, DateTime.now().month,
-            DateTime.now().day, 14, 15),
-        endTime: DateTime(DateTime.now().year, DateTime.now().month,
-            DateTime.now().day, 15, 15),
-      ),
-    ],
-    DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 1):
-        [
-      CleanCalendarEvent(
-        'Busy',
-        startTime: DateTime(DateTime.now().year, DateTime.now().month,
-            DateTime.now().day, 10, 45),
-        endTime: DateTime(DateTime.now().year, DateTime.now().month,
-            DateTime.now().day, 12, 15),
-      ),
-      CleanCalendarEvent(
-        'Busy',
-        startTime: DateTime(DateTime.now().year, DateTime.now().month,
-            DateTime.now().day, 13, 15),
-        endTime: DateTime(DateTime.now().year, DateTime.now().month,
-            DateTime.now().day, 15, 15),
-      ),
-    ],
-    DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 4):
-        [
-      CleanCalendarEvent(
-        'Busy',
-        startTime: DateTime(DateTime.now().year, DateTime.now().month,
-            DateTime.now().day, 9, 15),
-        endTime: DateTime(DateTime.now().year, DateTime.now().month,
-            DateTime.now().day, 11, 15),
-      ),
-      CleanCalendarEvent(
-        'Busy',
-        startTime: DateTime(DateTime.now().year, DateTime.now().month,
-            DateTime.now().day, 13, 15),
-        endTime: DateTime(DateTime.now().year, DateTime.now().month,
-            DateTime.now().day, 14, 15),
-      ),
-      CleanCalendarEvent(
-        'Busy',
-        startTime: DateTime(DateTime.now().year, DateTime.now().month,
-            DateTime.now().day, 16, 15),
-        endTime: DateTime(DateTime.now().year, DateTime.now().month,
-            DateTime.now().day, 17, 15),
-      ),
-    ]
-  };
-
 
 
   Future<void> uploadEventDataToFirebase(
@@ -1212,7 +1130,7 @@ class _CalendarAppState extends State<CalendarApp> {
   @override
   Widget build(BuildContext context) {
     createTableForCurrentUser();
-    uploadEventDataToFirebase(events);
+    uploadEventDataToFirebase(findUserFreeTime(events));
     return Scaffold(
       appBar: AppBar(
         title: Text('Calendar'),
@@ -1284,6 +1202,7 @@ class _CalendarAppState extends State<CalendarApp> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.orange,
         onPressed: () {
           showAddButton(events, context: context);
         },
@@ -1392,7 +1311,7 @@ void showAddButton(Map<DateTime, List<CleanCalendarEvent>> events, {required Bui
                   startTime: startTime,
                   endTime: endTime,
                   description: " ",
-                  color: Colors.green,
+                  color: Colors.blue,
                 );
                 // Add the new event to the events map
                 if (events[selectedDate] != null) {
