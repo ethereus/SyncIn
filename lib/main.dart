@@ -797,120 +797,193 @@ class _CalendarAppState extends State<CalendarApp> {
   }
 
 // ---free time functions---
-  
-List findFreeTime(user1, user2, time1, time2) {
-  // Grabs all the users events within the time frame given
-  List user1Events = getUserTime(user1, time1, time2);
-  List user2Events = getUserTime(user2, time1, time2);
+ 
+  Map<DateTime, List<CleanCalendarEvent>> findFreeTime(user1, user2) {
+    Map<DateTime, List<CleanCalendarEvent>> user1FreeTime = user1;
+    Map<DateTime, List<CleanCalendarEvent>> user2FreeTime = user2;
 
-  // freeTime will store all the time where the to users are free [[startTime,endTime]]
-  List freeTimeList = [];
+    List<DateTime> user1Times = [];
+    List<DateTime> user2Times = [];
 
-  int events1Ptr = 0;
-  int events2Ptr = 0;
+    user1FreeTime.forEach((key, value) {
+      user1Times.add(key);
+    });
+    user2FreeTime.forEach((key, value) {
+      user2Times.add(key);
+    });
 
-  while (user1Events.length > events1Ptr && user2Events.length > events2Ptr) {
-    if (user1Events[events1Ptr].endTime.isBefore(user2Events[events2Ptr].startTime)) {
-      // The events do not overlap at all
-      events1Ptr++;
-    } else if (user2Events[events2Ptr].endTime.isBefore(user1Events[events1Ptr].startTime)) {
-      events2Ptr++;
-    } else if (user1Events[events1Ptr].startTime.isBefore(user2Events[events2Ptr].startTime) &&
-        user1Events[events1Ptr].endTime.isBefore(user2Events[events2Ptr].endTime) &&
-        user1Events[events1Ptr].endTime.isAfter(user2Events[events2Ptr].startTime)) {
-      // The start of user1Events[events1Ptr] overlaps with user2Events[events2Ptr]
-      freeTimeList.add(CleanCalendarEvent("Free Time",
-          startTime: user2Events[events2Ptr].startTime,
-          endTime: user1Events[events1Ptr].endTime));
-      events1Ptr++;
-    } else if (user1Events[events1Ptr].startTime.isBefore(user2Events[events2Ptr].endTime) &&
-        user1Events[events1Ptr].endTime.isAfter(user2Events[events2Ptr].endTime)) {
-      // user1Events[events1Ptr] completely contains user2Events[events2Ptr]
-      freeTimeList.add(CleanCalendarEvent("Free Time",
-          startTime: user2Events[events2Ptr].startTime,
-          endTime: user2Events[events2Ptr].endTime));
-      events2Ptr++;
-    } else if (user2Events[events2Ptr].startTime.isBefore(user1Events[events1Ptr].startTime) &&
-        user2Events[events2Ptr].endTime.isBefore(user1Events[events1Ptr].endTime) &&
-        user2Events[events2Ptr].endTime.isAfter(user1Events[events1Ptr].startTime)) {
-      // The start of user2Events[events2Ptr] overlaps with user1Events[events1Ptr]
-      freeTimeList.add(CleanCalendarEvent("Free Time",
-          startTime: user1Events[events1Ptr].startTime,
-          endTime: user2Events[events2Ptr].endTime));
-      events2Ptr++;
-    } else if (user2Events[events2Ptr].startTime.isBefore(user1Events[events1Ptr].endTime) &&
-        user2Events[events2Ptr].endTime.isAfter(user1Events[events1Ptr].endTime)) {
-      // user2Events[events2Ptr] completely contains user1Events[events1Ptr]
-      freeTimeList.add(CleanCalendarEvent("Free Time",
-          startTime: user1Events[events1Ptr].startTime,
-          endTime: user1Events[events1Ptr].endTime));
-      events1Ptr++;
-    } else {
-      // The events overlap, but neither completely contains the other
-      DateTime overlapStart = user1Events[events1Ptr]
-              .startTime
-              .isAfter(user2Events[events2Ptr].startTime)
-          ? user1Events[events1Ptr].startTime
-          : user2Events[events2Ptr].startTime;
-      DateTime overlapEnd = user1Events[events1Ptr]
+    user1Times.sort(((a, b) => a.compareTo(b)));
+    user2Times.sort(((a, b) => a.compareTo(b)));
+
+    // freeTime will store all the time where the to users are free [[startTime,endTime]]
+    Map<DateTime, List<CleanCalendarEvent>> freeTimeMap = {};
+
+    for (final day in user1Times) {
+      // ignore: unrelated_type_equality_checks
+      Object? temp;
+      try {
+        temp = user2FreeTime[day];
+      } catch (e) {
+        temp = Null;
+      }
+      if (temp != Null) {
+        List<CleanCalendarEvent> user2Events = temp as List<CleanCalendarEvent>;
+        List<CleanCalendarEvent> user1Events = user1FreeTime[day]!;
+        List<CleanCalendarEvent> freeTimeList = [];
+
+        int events1Ptr = 0;
+        int events2Ptr = 0;
+
+        while (user1Events.length > events1Ptr &&
+            user2Events.length > events2Ptr) {
+          if (user1Events[events1Ptr]
               .endTime
-              .isBefore(user2Events[events2Ptr].endTime)
-          ? user1Events[events1Ptr].endTime
-          : user2Events[events2Ptr].endTime;
-      freeTimeList.add(CleanCalendarEvent("Free Time",
-          startTime: overlapStart, endTime: overlapEnd));
-      if (overlapStart = user1Events[events1Ptr].startTime) {
-        events1Ptr++;
-      } else if (overlapStart = user2Events[events2Ptr].startTime) {
-        events2Ptr++;
+              .isBefore(user2Events[events2Ptr].startTime)) {
+            // The events do not overlap at all
+            events1Ptr++;
+          } else if (user2Events[events2Ptr]
+              .endTime
+              .isBefore(user1Events[events1Ptr].startTime)) {
+            events2Ptr++;
+          } else if (user1Events[events1Ptr]
+                  .startTime
+                  .isBefore(user2Events[events2Ptr].startTime) &&
+              user1Events[events1Ptr]
+                  .endTime
+                  .isBefore(user2Events[events2Ptr].endTime) &&
+              user1Events[events1Ptr]
+                  .endTime
+                  .isAfter(user2Events[events2Ptr].startTime)) {
+            // The start of user1Events[events1Ptr] overlaps with user2Events[events2Ptr]
+            freeTimeList.add(CleanCalendarEvent("Free Time",
+                startTime: user2Events[events2Ptr].startTime,
+                endTime: user1Events[events1Ptr].endTime));
+            events1Ptr++;
+          } else if (user1Events[events1Ptr]
+                  .startTime
+                  .isBefore(user2Events[events2Ptr].endTime) &&
+              user1Events[events1Ptr]
+                  .endTime
+                  .isAfter(user2Events[events2Ptr].endTime)) {
+            // user1Events[events1Ptr] completely contains user2Events[events2Ptr]
+            freeTimeList.add(CleanCalendarEvent("Free Time",
+                startTime: user2Events[events2Ptr].startTime,
+                endTime: user2Events[events2Ptr].endTime));
+            events2Ptr++;
+          } else if (user2Events[events2Ptr]
+                  .startTime
+                  .isBefore(user1Events[events1Ptr].startTime) &&
+              user2Events[events2Ptr]
+                  .endTime
+                  .isBefore(user1Events[events1Ptr].endTime) &&
+              user2Events[events2Ptr]
+                  .endTime
+                  .isAfter(user1Events[events1Ptr].startTime)) {
+            // The start of user2Events[events2Ptr] overlaps with user1Events[events1Ptr]
+            freeTimeList.add(CleanCalendarEvent("Free Time",
+                startTime: user1Events[events1Ptr].startTime,
+                endTime: user2Events[events2Ptr].endTime));
+            events2Ptr++;
+          } else if (user2Events[events2Ptr]
+                  .startTime
+                  .isBefore(user1Events[events1Ptr].endTime) &&
+              user2Events[events2Ptr]
+                  .endTime
+                  .isAfter(user1Events[events1Ptr].endTime)) {
+            // user2Events[events2Ptr] completely contains user1Events[events1Ptr]
+            freeTimeList.add(CleanCalendarEvent("Free Time",
+                startTime: user1Events[events1Ptr].startTime,
+                endTime: user1Events[events1Ptr].endTime));
+            events1Ptr++;
+          } else {
+            // The events overlap, but neither completely contains the other
+            DateTime overlapStart = user1Events[events1Ptr]
+                    .startTime
+                    .isAfter(user2Events[events2Ptr].startTime)
+                ? user1Events[events1Ptr].startTime
+                : user2Events[events2Ptr].startTime;
+            DateTime overlapEnd = user1Events[events1Ptr]
+                    .endTime
+                    .isBefore(user2Events[events2Ptr].endTime)
+                ? user1Events[events1Ptr].endTime
+                : user2Events[events2Ptr].endTime;
+            freeTimeList.add(CleanCalendarEvent("Free Time",
+                startTime: overlapStart, endTime: overlapEnd));
+            if (overlapStart == user1Events[events1Ptr].startTime) {
+              events1Ptr++;
+            } else if (overlapStart == user2Events[events2Ptr].startTime) {
+              events2Ptr++;
+            }
+          }
+        }
+        freeTimeMap[day] = freeTimeList;
+        user1Times.remove(day);
+        user2Times.remove(day);
+      } else {
+        List<CleanCalendarEvent> value = user1FreeTime[day]!;
+        value.sort(((a, b) => a.startTime.compareTo(b.startTime)));
+        List<CleanCalendarEvent> freeTime = [];
+        DateTime freeEndTime;
+        DateTime freeStartTime = day;
+        for (int i = 0; i < events.length; i++) {
+          freeEndTime = value[i].startTime;
+          freeTime.add(CleanCalendarEvent(
+            "Free Time",
+            startTime: freeStartTime,
+            endTime: freeEndTime,
+          ));
+          freeStartTime = value[i].endTime;
+        }
+        freeTimeMap[day] = freeTime;
+        user1Times.remove(day);
       }
     }
-  }
-
-  return freeTimeList;
-}
-
-List getUserTime(user, time1, time2) {
-  /*------------------------------------
-  The firebase events pull go here
-  --------------------------------------*/
-  // ignore: prefer_typing_uninitialized_variables
-  var events; //Placeholder for the events pull
-
-  List userEvents = [];
-
-  for (final event in events) {
-    //Event is spilt into 2 part [0] being event details and event.startTime being the start time and .endTime being the end time
-    if (event.startTime.isAfter(time1) && event.endTime.isBefore(time2)) {
-      userEvents.add(event);
+    if (user2Times.isNotEmpty) {
+      for (final day in user2Times) {
+        List<CleanCalendarEvent> value = user2FreeTime[day]!;
+        value.sort(((a, b) => a.startTime.compareTo(b.startTime)));
+        List<CleanCalendarEvent> freeTime = [];
+        DateTime freeEndTime;
+        DateTime freeStartTime = day;
+        for (int i = 0; i < events.length; i++) {
+          freeEndTime = value[i].startTime;
+          freeTime.add(CleanCalendarEvent(
+            "Free Time",
+            startTime: freeStartTime,
+            endTime: freeEndTime,
+          ));
+          freeStartTime = value[i].endTime;
+        }
+        freeTimeMap[day] = freeTime;
+      }
     }
+    return freeTimeMap;
   }
 
-  // .sort might need more work but we will see when testing
-  userEvents.sort(((a, b) => a.startTime.compareTo(b.startTime)));
 
-  return userEvents;
-}
+  Map<DateTime, List<CleanCalendarEvent>> findUserFreeTime(pasEvents) {
+    Map<DateTime, List<CleanCalendarEvent>> events = pasEvents;
+    Map<DateTime, List<CleanCalendarEvent>> freeTimeMap = {};
 
-List findUserFreeTime(user) {
-  //Server call to grab events of user goes here
-  // ignore: unused_local_variable
-  List events = []; // Placeholder
-  events.sort(((a, b) => a.startTime.compareTo(b.startTime))); //Might need to override the compare function of cleanCalendarEvent
-  DateTime freeStartTime = DateTime.now();
-  List freeTime = [];
-  DateTime freeEndTime;
-  for (int i = 0; i < events.length; i++) {
-    freeEndTime = events[i].startTime;
-    freeTime.add(CleanCalendarEvent("Free Time",
-        startTime: freeStartTime,
-        endTime: freeEndTime,
-        color: const Color.fromARGB(0, 30, 255, 0)));
-    freeStartTime = events[i].endTime;
+    events.forEach((key, value) {
+      value.sort(((a, b) => a.startTime.compareTo(b.startTime)));
+      List<CleanCalendarEvent> freeTime = [];
+      DateTime freeEndTime;
+      DateTime freeStartTime = key;
+      for (int i = 0; i < events.length - 1; i++) {
+        freeEndTime = value[i].startTime;
+        freeTime.add(CleanCalendarEvent(
+          "Free Time",
+          startTime: freeStartTime,
+          endTime: freeEndTime,
+        ));
+        freeStartTime = value[i].endTime;
+      }
+      freeTimeMap[key] = freeTime;
+    });
+
+    return freeTimeMap;
   }
-
-  return freeTime;
-}
 
 // --- end find free time---
 
@@ -950,6 +1023,142 @@ List findUserFreeTime(user) {
           color: Colors.pink),
     ],
   };
+  
+  final Map<DateTime, List<CleanCalendarEvent>> person1Events = {
+    DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day): [
+      CleanCalendarEvent(
+        'Busy',
+        startTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day, 9, 15),
+        endTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day, 10, 45),
+      ),
+      CleanCalendarEvent(
+        'Busy',
+        startTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day, 12, 15),
+        endTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day, 13, 15),
+      ),
+    ],
+    DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 1):
+        [
+      CleanCalendarEvent(
+        'Busy',
+        startTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day, 9, 15),
+        endTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day, 10, 45),
+      ),
+      CleanCalendarEvent(
+        'Busy',
+        startTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day, 15, 15),
+        endTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day, 16, 15),
+      ),
+      CleanCalendarEvent(
+        'Busy',
+        startTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day, 16, 15),
+        endTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day, 18, 15),
+      ),
+    ],
+    DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 3):
+        [
+      CleanCalendarEvent(
+        'Busy',
+        startTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day, 12, 15),
+        endTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day, 13, 15),
+      ),
+      CleanCalendarEvent(
+        'Busy',
+        startTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day, 13, 15),
+        endTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day, 15, 15),
+      ),
+      CleanCalendarEvent(
+        'Busy',
+        startTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day, 15, 15),
+        endTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day, 16, 15),
+      ),
+    ]
+  };
+
+  final Map<DateTime, List<CleanCalendarEvent>> person2Events = {
+    DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day): [
+      CleanCalendarEvent(
+        'Busy',
+        startTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day, 10, 45),
+        endTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day, 12, 15),
+      ),
+      CleanCalendarEvent(
+        'Busy',
+        startTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day, 13, 15),
+        endTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day, 14, 15),
+      ),
+      CleanCalendarEvent(
+        'Busy',
+        startTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day, 14, 15),
+        endTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day, 15, 15),
+      ),
+    ],
+    DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 1):
+        [
+      CleanCalendarEvent(
+        'Busy',
+        startTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day, 10, 45),
+        endTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day, 12, 15),
+      ),
+      CleanCalendarEvent(
+        'Busy',
+        startTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day, 13, 15),
+        endTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day, 15, 15),
+      ),
+    ],
+    DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 4):
+        [
+      CleanCalendarEvent(
+        'Busy',
+        startTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day, 9, 15),
+        endTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day, 11, 15),
+      ),
+      CleanCalendarEvent(
+        'Busy',
+        startTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day, 13, 15),
+        endTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day, 14, 15),
+      ),
+      CleanCalendarEvent(
+        'Busy',
+        startTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day, 16, 15),
+        endTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day, 17, 15),
+      ),
+    ]
+  };
+
+
 
   Future<void> uploadEventDataToFirebase(
       Map<DateTime, List<CleanCalendarEvent>> events) async {
@@ -957,20 +1166,34 @@ List findUserFreeTime(user) {
     final FirebaseAuth _auth = FirebaseAuth.instance;
 
     final currentUser = _auth.currentUser;
+    print(currentUser);
 
     if (currentUser != null) {
       events.forEach((key, element) {
         for (final event in element) {
-          _database.child('user_tables').child(currentUser.uid).push().set({
+          // check if in database then don't run
+
+          var dataRetrieved = _database
+              .child('user_tables')
+              .child(currentUser.uid)
+              .orderByChild("startTime")
+              .equalTo(event.startTime.toString());
+
+          //dataRetrieved.on(event.startTime.toString(), function(snapshot) {
+          //if(!snapshot.exists()){
+          _database.child('free_time').child(currentUser.uid).push().set({
             'day': key.toString(),
             'summary': event.summary.toString(),
             'startTime': event.startTime.toString(),
             'endTime': event.endTime.toString(),
           });
+          //}
+          //});
         }
       });
     }
   }
+
 
   void createTableForCurrentUser() {
     final FirebaseAuth _auth = FirebaseAuth.instance;
