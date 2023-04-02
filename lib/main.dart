@@ -64,62 +64,39 @@ class EventDatabase {
   }
 
   // Save the events map to the local database, ignoring duplicates
-static Future<void> saveEvents(Map<DateTime, List<CleanCalendarEvent>> events) async {
-  final db = await _openDatabase();
-  await db.transaction((txn) async {
-    events.forEach((dateTime, eventsList) async {
-      for (final event in eventsList) {
-        await txn.insert(
-          _eventsTable,
-          {
-            'description': event.description,
-            'startTime': event.startTime.toIso8601String(),
-            'endTime': event.endTime.toIso8601String(),
-            'dateTime': dateTime.toIso8601String(),
-          },
-          conflictAlgorithm: ConflictAlgorithm.ignore,
-        );
-      }
-    });
 
+static Future<void> saveEvent(CleanCalendarEvent event) async {
+  final db = await _openDatabase();
+  await db.insert(_eventsTable, {
+    'description': event.description,
+    'startTime': event.startTime.toString(),
+    'endTime': event.endTime.toString(),
+    'dateTime': event.dateTime.toString(),
   });
 }
-
 
   
 
   // Retrieve the events map from the local database
   static Future<Map<DateTime, List<CleanCalendarEvent>>> getEvents() async {
-    final db = await _openDatabase();
-    final results = await db.query(_eventsTable);
-    final events = <DateTime, List<CleanCalendarEvent>>{};
-    for (final result in results) {
-      final startTime = result['startTime'];
-      final endTime = result['endTime'];
-      final description = result['description'];
-
-      CleanCalendarEvent event = CleanCalendarEvent('',
-        description: description as String,
-        startTime: DateTime.parse(startTime as String),
-        endTime: DateTime.parse(endTime as String),
-
-      );
-      var dateTime = result['dateTime'];
-      if (dateTime is String) {
-        dateTime = DateTime.parse(dateTime);
-        if (!events.containsKey(dateTime)) {
-          events[dateTime as DateTime] = []; // explicitly cast as DateTime
-        }
-}
-
-
-
-    events[dateTime]!.add(event);
+  final db = await _openDatabase();
+  final List<Map<String, dynamic>> maps = await db.query(_eventsTable);
+  final events = <DateTime, List<CleanCalendarEvent>>{};
+  for (final map in maps) {
+    final event = CleanCalendarEvent(
+      map['description'] as String,
+      startTime: DateTime.parse(map['startTime'] as String),
+      endTime: DateTime.parse(map['endTime'] as String),
+      dateTime: DateTime.parse(map['dateTime'] as String),
+    );
+    if (!events.containsKey(event.dateTime)) {
+      events[event.dateTime] = [];
+    }
+    events[event.dateTime]!.add(event);
   }
   return events;
-}
-
   }
+}
 
 
 class GroupChatScreen extends StatefulWidget {
