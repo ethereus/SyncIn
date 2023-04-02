@@ -797,7 +797,7 @@ class _CalendarAppState extends State<CalendarApp> {
   }
 
 // ---free time functions---
- 
+
   Map<DateTime, List<CleanCalendarEvent>> findFreeTime(user1, user2) {
     Map<DateTime, List<CleanCalendarEvent>> user1FreeTime = user1;
     Map<DateTime, List<CleanCalendarEvent>> user2FreeTime = user2;
@@ -934,6 +934,7 @@ class _CalendarAppState extends State<CalendarApp> {
           ));
           freeStartTime = value[i].endTime;
         }
+        freeTime.add(CleanCalendarEvent("Free Time", startTime: freeStartTime, endTime: day.add(const Duration(days: 1))));
         freeTimeMap[day] = freeTime;
         user1Times.remove(day);
       }
@@ -954,12 +955,12 @@ class _CalendarAppState extends State<CalendarApp> {
           ));
           freeStartTime = value[i].endTime;
         }
+        freeTime.add(CleanCalendarEvent("Free Time", startTime: freeStartTime, endTime: day.add(const Duration(days: 1))));
         freeTimeMap[day] = freeTime;
       }
     }
     return freeTimeMap;
   }
-
 
   Map<DateTime, List<CleanCalendarEvent>> findUserFreeTime(pasEvents) {
     Map<DateTime, List<CleanCalendarEvent>> events = pasEvents;
@@ -979,6 +980,8 @@ class _CalendarAppState extends State<CalendarApp> {
         ));
         freeStartTime = value[i].endTime;
       }
+      freeTime.add(CleanCalendarEvent("Free Time", startTime: freeStartTime, endTime: key.add(const Duration(days: 1))));
+
       freeTimeMap[key] = freeTime;
     });
 
