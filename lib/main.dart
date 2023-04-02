@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -11,9 +12,12 @@ import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart';
 
 late SharedPreferences prefs;
 void main() async {
+
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   prefs = await SharedPreferences.getInstance();
@@ -34,6 +38,88 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
+
+//classes here
+
+class EventDatabase {
+  static const _dbName = 'events.db';
+  static const _eventsTable = 'events';
+
+  // Open the local database
+  static Future<Database> _openDatabase() async {
+    final dbPath = await getDatabasesPath();
+    final path = join(dbPath, _dbName);
+
+    return openDatabase(path, version: 1, onCreate: (db, version) async {
+      await db.execute('''
+        CREATE TABLE $_eventsTable (
+          description TEXT,
+          startTime TEXT,
+          endTime TEXT,
+          dateTime TEXT
+        )
+      ''');
+    });
+  }
+
+  // Save the events map to the local database, ignoring duplicates
+static Future<void> saveEvents(Map<DateTime, List<CleanCalendarEvent>> events) async {
+  final db = await _openDatabase();
+  await db.transaction((txn) async {
+    events.forEach((dateTime, eventsList) async {
+      for (final event in eventsList) {
+        await txn.insert(
+          _eventsTable,
+          {
+            'description': event.description,
+            'startTime': event.startTime.toIso8601String(),
+            'endTime': event.endTime.toIso8601String(),
+            'dateTime': dateTime.toIso8601String(),
+          },
+          conflictAlgorithm: ConflictAlgorithm.ignore,
+        );
+      }
+    });
+
+  });
+}
+
+
+  
+
+  // Retrieve the events map from the local database
+  static Future<Map<DateTime, List<CleanCalendarEvent>>> getEvents() async {
+    final db = await _openDatabase();
+    final results = await db.query(_eventsTable);
+    final events = <DateTime, List<CleanCalendarEvent>>{};
+    for (final result in results) {
+      final startTime = result['startTime'];
+      final endTime = result['endTime'];
+      final description = result['description'];
+
+      CleanCalendarEvent event = CleanCalendarEvent('',
+        description: description as String,
+        startTime: DateTime.parse(startTime as String),
+        endTime: DateTime.parse(endTime as String),
+
+      );
+      var dateTime = result['dateTime'];
+      if (dateTime is String) {
+        dateTime = DateTime.parse(dateTime);
+        if (!events.containsKey(dateTime)) {
+          events[dateTime as DateTime] = []; // explicitly cast as DateTime
+        }
+}
+
+
+
+    events[dateTime]!.add(event);
+  }
+  return events;
+}
+
+  }
 
 
 class GroupChatScreen extends StatefulWidget {
@@ -237,7 +323,7 @@ class _IcsScreenState extends State<IcsScreen> {
               pleaseWork = icsString;
             });
 
-            // The issue that the program doesn't recongize the cached .ics file as an asset so its unable to do shit
+            // The issue that the program doesn't recongize the cached .ics file as an asset so its unable to do anything
             // A fix is store it somewhere under a reuseable name then delete after accessed and processed it.
             // Then we update the .yaml file so it can recongize the asset and load it.
 
@@ -805,10 +891,9 @@ class _CalendarAppState extends State<CalendarApp> {
       selectedDay = date;
       selectedEvent = events[selectedDay] ?? [];
     });
-    print(selectedDay);
   }
 
-// ---free time functions---
+  // ---free time functions---
 
   Map<DateTime, List<CleanCalendarEvent>> findFreeTime(user1, user2) {
     Map<DateTime, List<CleanCalendarEvent>> user1FreeTime = user1;
@@ -1002,17 +1087,10 @@ class _CalendarAppState extends State<CalendarApp> {
 
 // --- end find free time---
 
-  @override
-  void initState() {
-    // TODO: implement initState
-    selectedEvent = events[selectedDay] ?? [];
-    super.initState();
-  }
-
   DateTime? selectedDay;
   List<CleanCalendarEvent>? selectedEvent;
   
-  final Map<DateTime, List<CleanCalendarEvent>> events = {
+  Map<DateTime, List<CleanCalendarEvent>> events = {
     DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day): [
       CleanCalendarEvent(
         'Busy',
@@ -1020,6 +1098,7 @@ class _CalendarAppState extends State<CalendarApp> {
             DateTime.now().day, 9, 15),
         endTime: DateTime(DateTime.now().year, DateTime.now().month,
             DateTime.now().day, 10, 45),
+        description: "busy",
       ),
       CleanCalendarEvent(
         'Busy',
@@ -1027,6 +1106,7 @@ class _CalendarAppState extends State<CalendarApp> {
             DateTime.now().day, 12, 15),
         endTime: DateTime(DateTime.now().year, DateTime.now().month,
             DateTime.now().day, 13, 15),
+        description: "busy",
       ),
     ],
     DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 1):
@@ -1037,6 +1117,7 @@ class _CalendarAppState extends State<CalendarApp> {
             DateTime.now().day, 9, 15),
         endTime: DateTime(DateTime.now().year, DateTime.now().month,
             DateTime.now().day, 10, 45),
+        description: "busy",
       ),
       CleanCalendarEvent(
         'Busy',
@@ -1044,6 +1125,7 @@ class _CalendarAppState extends State<CalendarApp> {
             DateTime.now().day, 15, 15),
         endTime: DateTime(DateTime.now().year, DateTime.now().month,
             DateTime.now().day, 16, 15),
+        description: "busy",
       ),
       CleanCalendarEvent(
         'Busy',
@@ -1051,6 +1133,7 @@ class _CalendarAppState extends State<CalendarApp> {
             DateTime.now().day, 16, 15),
         endTime: DateTime(DateTime.now().year, DateTime.now().month,
             DateTime.now().day, 18, 15),
+        description: "busy",
       ),
     ],
     DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 3):
@@ -1061,6 +1144,7 @@ class _CalendarAppState extends State<CalendarApp> {
             DateTime.now().day, 12, 15),
         endTime: DateTime(DateTime.now().year, DateTime.now().month,
             DateTime.now().day, 13, 15),
+        description: "busy",
       ),
       CleanCalendarEvent(
         'Busy',
@@ -1068,6 +1152,7 @@ class _CalendarAppState extends State<CalendarApp> {
             DateTime.now().day, 13, 15),
         endTime: DateTime(DateTime.now().year, DateTime.now().month,
             DateTime.now().day, 15, 15),
+        description: "busy",
       ),
       CleanCalendarEvent(
         'Busy',
@@ -1075,14 +1160,29 @@ class _CalendarAppState extends State<CalendarApp> {
             DateTime.now().day, 15, 15),
         endTime: DateTime(DateTime.now().year, DateTime.now().month,
             DateTime.now().day, 16, 15),
+        description: "busy",
       ),
     ]
   };
 
-
+  @override
+void initState() {
+  super.initState();
+  EventDatabase.saveEvents(events);
+  EventDatabase.getEvents().then((dbEvents) {
+    setState(() {
+      events = dbEvents;
+      selectedEvent = events[selectedDay] ?? [];
+    });
+  }).catchError((error) {
+    print('Error fetching events: $error');
+  });
+}
 
   Future<void> uploadEventDataToFirebase(
-      Map<DateTime, List<CleanCalendarEvent>> events) async {
+    Map<DateTime, List<CleanCalendarEvent>> events) async {
+
+
     final _database = FirebaseDatabase.instance.reference();
     final FirebaseAuth _auth = FirebaseAuth.instance;
 
@@ -1117,6 +1217,7 @@ class _CalendarAppState extends State<CalendarApp> {
 
 
   void createTableForCurrentUser() {
+    
     final FirebaseAuth _auth = FirebaseAuth.instance;
     final FirebaseDatabase _database = FirebaseDatabase.instance;
 
@@ -1130,7 +1231,7 @@ class _CalendarAppState extends State<CalendarApp> {
   @override
   Widget build(BuildContext context) {
     createTableForCurrentUser();
-    uploadEventDataToFirebase(findUserFreeTime(events));
+    //uploadEventDataToFirebase(findUserFreeTime(events));
     return Scaffold(
       appBar: AppBar(
         title: Text('Calendar'),
@@ -1314,10 +1415,32 @@ void showAddButton(Map<DateTime, List<CleanCalendarEvent>> events, {required Bui
                   color: Colors.blue,
                 );
                 // Add the new event to the events map
+
+                Map<DateTime, List<CleanCalendarEvent>> calendarEvent = {
+                  DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 3):
+                    [
+                    CleanCalendarEvent(
+                      title,
+                      startTime: startTime,
+                      endTime: endTime,
+                      description: title,
+                    ),
+                  ]
+                };
+
+
+
                 if (events[selectedDate] != null) {
+
                   events[selectedDate]!.add(newEvent);
+
+                  EventDatabase.saveEvents(calendarEvent);
+
                 } else {
+
                   events[selectedDate] = [newEvent];
+
+                  EventDatabase.saveEvents(calendarEvent);
                 }
                 // Close the modal bottom sheet
                 Navigator.pop(context);
