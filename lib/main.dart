@@ -10,10 +10,13 @@ import 'dart:math' as math;
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+late SharedPreferences prefs;
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  prefs = await SharedPreferences.getInstance();
   runApp(MyApp());
 }
 
@@ -43,11 +46,20 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   final _messageController = TextEditingController();
   List<Map<dynamic, dynamic>> _messages = [];
 
+  String code = '';
+
   @override
   void initState() {
     super.initState();
+
+    String? savedCode = prefs.getString('code');
+
+    if (savedCode != null) {
+      code = savedCode;
+    }
+
     // Listen for changes in the Firebase database
-    _database.child('group_chat_messages').onChildAdded.listen((event) {
+    _database.child('group_chat_messages/' + code).onChildAdded.listen((event) {
       setState(() {
         var messageHolder = Map<String, dynamic>.from(
             event.snapshot.value as Map<dynamic, dynamic>);
@@ -58,7 +70,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
 
   void _sendMessage(String message) {
     // Add the message to the Firebase database
-    _database.child('group_chat_messages').push().set({
+    _database.child('group_chat_messages/' + code).push().set({
       'sender': _auth.currentUser!.uid,
       'message': message,
       'timestamp': ServerValue.timestamp,
@@ -346,6 +358,100 @@ class Authentication {
   }
 }
 
+class JoinGroupScreen extends StatefulWidget {
+  @override
+  _JoinGroupScreenState createState() => _JoinGroupScreenState();
+}
+
+class _JoinGroupScreenState extends State<JoinGroupScreen> {
+  static String code = '.';
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.blueGrey,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.only(
+            left: 16.0,
+            right: 16.0,
+            bottom: 20.0,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              Row(),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      flex: 1,
+                      child: Image.asset(
+                        'assets/images/logo.png',
+                        height: 160,
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    Text(
+                      'Enter group code:',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                      ),
+                    ),
+                    TextField(
+                      decoration: InputDecoration(
+                        hintText: "eg. x0fVJROgkdLAOcWaAAervVhsmxg7",
+                      ),
+                      onChanged: (enteredCode) {
+                        code = enteredCode;
+                        prefs.setString('code', code);
+                      },
+                    ),
+                    ElevatedButton(
+                      style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.all(
+                          Colors.white,
+                        ),
+                        shape: MaterialStateProperty.all(
+                          RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                      onPressed: () async {
+                        Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(
+                            builder: (context) => CalendarApp(),
+                          ),
+                         );
+                      },
+                      child: Padding(
+                        padding: EdgeInsets.only(top: 8.0, bottom: 8.0),
+                        child: Text(
+                          'Join',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                            letterSpacing: 2,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class GoogleSignInButton extends StatefulWidget {
   @override
   _GoogleSignInButtonState createState() => _GoogleSignInButtonState();
@@ -383,13 +489,30 @@ class _GoogleSignInButtonState extends State<GoogleSignInButton> {
                   _isSigningIn = false;
                 });
 
-                if (user != null) {
+                String code = '.';
+
+                String? savedCode = prefs.getString('code');
+
+                if (savedCode != null) {
+                  code = savedCode;
+                }
+
+                if (user != null && code == '.') {
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(
+                      builder: (context) => JoinGroupScreen(),
+                    ),
+                  );
+                }
+
+                if (user != null && code != '.') {
                   Navigator.of(context).pushReplacement(
                     MaterialPageRoute(
                       builder: (context) => CalendarApp(),
                     ),
                   );
                 }
+
               },
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(0, 10, 0, 10),
