@@ -16,6 +16,17 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
 late SharedPreferences prefs;
+
+class CleanCalendarEvent {
+  String description;
+  DateTime startTime;
+  DateTime endTime;
+  DateTime dateTime;
+
+  CleanCalendarEvent(this.description, {required this.startTime, required this.endTime, required this.dateTime});
+}
+
+
 void main() async {
 
   WidgetsFlutterBinding.ensureInitialized();
@@ -65,13 +76,17 @@ class EventDatabase {
 
   // Save the events map to the local database, ignoring duplicates
 
-static Future<void> saveEvent(CleanCalendarEvent event) async {
+static Future<void> saveEvents(CleanCalendarEvent event) async {
   final db = await _openDatabase();
   await db.insert(_eventsTable, {
     'description': event.description,
     'startTime': event.startTime.toString(),
     'endTime': event.endTime.toString(),
-    'dateTime': event.dateTime.toString(),
+    'dateTime': DateTime(
+      event.startTime.year,
+      event.startTime.month,
+      event.startTime.day,
+    ).toString(),
   });
 }
 
@@ -83,11 +98,12 @@ static Future<void> saveEvent(CleanCalendarEvent event) async {
   final List<Map<String, dynamic>> maps = await db.query(_eventsTable);
   final events = <DateTime, List<CleanCalendarEvent>>{};
   for (final map in maps) {
+    var dateTime = DateTime.parse(map['dateTime'] as String);
     final event = CleanCalendarEvent(
       map['description'] as String,
       startTime: DateTime.parse(map['startTime'] as String),
       endTime: DateTime.parse(map['endTime'] as String),
-      dateTime: DateTime.parse(map['dateTime'] as String),
+      dateTime: dateTime,
     );
     if (!events.containsKey(event.dateTime)) {
       events[event.dateTime] = [];
@@ -155,10 +171,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     final iCalData = iCalJSON['data'];
     for (final event in iCalData) {
       events.add(CleanCalendarEvent(event['summary'],
+          dateTime: DateTime.now(),
           startTime: parseDateString(event['dtstart']),
-          endTime: parseDateString(event['dtend']),
-          color: Color((math.Random().nextDouble() * 0xFFFFFF).toInt())
-              .withOpacity(1.0)));
+          endTime: parseDateString(event['dtend'])));
     }
     print("ITS HERE:");
     print(events);
@@ -309,10 +324,9 @@ class _IcsScreenState extends State<IcsScreen> {
             final iCalData = iCalJSON['data'];
             for (final event in iCalData) {
               events.add(CleanCalendarEvent(event['summary'],
+                  dateTime: DateTime.now(),
                   startTime: DateTime.parse(event['dtstart']),
-                  endTime: DateTime.parse(event['dtend']),
-                  color: Color((math.Random().nextDouble() * 0xFFFFFF).toInt())
-                      .withOpacity(1.0)));
+                  endTime: DateTime.parse(event['dtend'])));
             }
             newFile.delete();
             for (final event in events) {
@@ -930,6 +944,7 @@ class _CalendarAppState extends State<CalendarApp> {
                   .isAfter(user2Events[events2Ptr].startTime)) {
             // The start of user1Events[events1Ptr] overlaps with user2Events[events2Ptr]
             freeTimeList.add(CleanCalendarEvent("Free Time",
+                dateTime: user2Events[events2Ptr].dateTime,
                 startTime: user2Events[events2Ptr].startTime,
                 endTime: user1Events[events1Ptr].endTime));
             events1Ptr++;
@@ -941,6 +956,7 @@ class _CalendarAppState extends State<CalendarApp> {
                   .isAfter(user2Events[events2Ptr].endTime)) {
             // user1Events[events1Ptr] completely contains user2Events[events2Ptr]
             freeTimeList.add(CleanCalendarEvent("Free Time",
+                dateTime: user2Events[events2Ptr].dateTime,
                 startTime: user2Events[events2Ptr].startTime,
                 endTime: user2Events[events2Ptr].endTime));
             events2Ptr++;
@@ -955,6 +971,7 @@ class _CalendarAppState extends State<CalendarApp> {
                   .isAfter(user1Events[events1Ptr].startTime)) {
             // The start of user2Events[events2Ptr] overlaps with user1Events[events1Ptr]
             freeTimeList.add(CleanCalendarEvent("Free Time",
+                dateTime: user1Events[events1Ptr].dateTime,
                 startTime: user1Events[events1Ptr].startTime,
                 endTime: user2Events[events2Ptr].endTime));
             events2Ptr++;
@@ -966,6 +983,7 @@ class _CalendarAppState extends State<CalendarApp> {
                   .isAfter(user1Events[events1Ptr].endTime)) {
             // user2Events[events2Ptr] completely contains user1Events[events1Ptr]
             freeTimeList.add(CleanCalendarEvent("Free Time",
+                dateTime: user1Events[events1Ptr].dateTime,
                 startTime: user1Events[events1Ptr].startTime,
                 endTime: user1Events[events1Ptr].endTime));
             events1Ptr++;
@@ -982,6 +1000,7 @@ class _CalendarAppState extends State<CalendarApp> {
                 ? user1Events[events1Ptr].endTime
                 : user2Events[events2Ptr].endTime;
             freeTimeList.add(CleanCalendarEvent("Free Time",
+                dateTime: user1Events[events1Ptr].dateTime,
                 startTime: overlapStart, endTime: overlapEnd));
             if (overlapStart == user1Events[events1Ptr].startTime) {
               events1Ptr++;
@@ -998,17 +1017,21 @@ class _CalendarAppState extends State<CalendarApp> {
         value.sort(((a, b) => a.startTime.compareTo(b.startTime)));
         List<CleanCalendarEvent> freeTime = [];
         DateTime freeEndTime;
+        DateTime freeDateTime;
         DateTime freeStartTime = day;
         for (int i = 0; i < events.length; i++) {
           freeEndTime = value[i].startTime;
+          freeDateTime = DateTime.now();
           freeTime.add(CleanCalendarEvent(
             "Free Time",
+            dateTime: freeDateTime,
             startTime: freeStartTime,
             endTime: freeEndTime,
           ));
           freeStartTime = value[i].endTime;
         }
-        freeTime.add(CleanCalendarEvent("Free Time", startTime: freeStartTime, endTime: day.add(const Duration(days: 1))));
+        freeDateTime = DateTime.now();
+        freeTime.add(CleanCalendarEvent("Free Time", dateTime: freeDateTime, startTime: freeStartTime, endTime: day.add(const Duration(days: 1))));
         freeTimeMap[day] = freeTime;
         user1Times.remove(day);
       }
@@ -1019,17 +1042,20 @@ class _CalendarAppState extends State<CalendarApp> {
         value.sort(((a, b) => a.startTime.compareTo(b.startTime)));
         List<CleanCalendarEvent> freeTime = [];
         DateTime freeEndTime;
+        DateTime freeDateTime;
         DateTime freeStartTime = day;
+        freeDateTime = DateTime.now();
         for (int i = 0; i < events.length; i++) {
           freeEndTime = value[i].startTime;
           freeTime.add(CleanCalendarEvent(
             "Free Time",
             startTime: freeStartTime,
             endTime: freeEndTime,
+            dateTime: freeDateTime,
           ));
           freeStartTime = value[i].endTime;
         }
-        freeTime.add(CleanCalendarEvent("Free Time", startTime: freeStartTime, endTime: day.add(const Duration(days: 1))));
+        freeTime.add(CleanCalendarEvent("Free Time", dateTime: freeDateTime, startTime: freeStartTime, endTime: day.add(const Duration(days: 1))));
         freeTimeMap[day] = freeTime;
       }
     }
@@ -1045,16 +1071,18 @@ class _CalendarAppState extends State<CalendarApp> {
       List<CleanCalendarEvent> freeTime = [];
       DateTime freeEndTime;
       DateTime freeStartTime = key;
+      DateTime freeDateTime = DateTime.now();
       for (int i = 0; i < events.length - 1; i++) {
         freeEndTime = value[i].startTime;
         freeTime.add(CleanCalendarEvent(
           "Free Time",
           startTime: freeStartTime,
           endTime: freeEndTime,
+          dateTime: freeDateTime,
         ));
         freeStartTime = value[i].endTime;
       }
-      freeTime.add(CleanCalendarEvent("Free Time", startTime: freeStartTime, endTime: key.add(const Duration(days: 1))));
+      freeTime.add(CleanCalendarEvent("Free Time", dateTime: freeDateTime, startTime: freeStartTime, endTime: key.add(const Duration(days: 1))));
 
       freeTimeMap[key] = freeTime;
     });
@@ -1075,7 +1103,8 @@ class _CalendarAppState extends State<CalendarApp> {
             DateTime.now().day, 9, 15),
         endTime: DateTime(DateTime.now().year, DateTime.now().month,
             DateTime.now().day, 10, 45),
-        description: "busy",
+        dateTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day),
       ),
       CleanCalendarEvent(
         'Busy',
@@ -1083,7 +1112,8 @@ class _CalendarAppState extends State<CalendarApp> {
             DateTime.now().day, 12, 15),
         endTime: DateTime(DateTime.now().year, DateTime.now().month,
             DateTime.now().day, 13, 15),
-        description: "busy",
+        dateTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day),
       ),
     ],
     DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 1):
@@ -1094,7 +1124,8 @@ class _CalendarAppState extends State<CalendarApp> {
             DateTime.now().day, 9, 15),
         endTime: DateTime(DateTime.now().year, DateTime.now().month,
             DateTime.now().day, 10, 45),
-        description: "busy",
+        dateTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day),
       ),
       CleanCalendarEvent(
         'Busy',
@@ -1102,7 +1133,8 @@ class _CalendarAppState extends State<CalendarApp> {
             DateTime.now().day, 15, 15),
         endTime: DateTime(DateTime.now().year, DateTime.now().month,
             DateTime.now().day, 16, 15),
-        description: "busy",
+        dateTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day),
       ),
       CleanCalendarEvent(
         'Busy',
@@ -1110,7 +1142,8 @@ class _CalendarAppState extends State<CalendarApp> {
             DateTime.now().day, 16, 15),
         endTime: DateTime(DateTime.now().year, DateTime.now().month,
             DateTime.now().day, 18, 15),
-        description: "busy",
+        dateTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day),
       ),
     ],
     DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 3):
@@ -1121,7 +1154,8 @@ class _CalendarAppState extends State<CalendarApp> {
             DateTime.now().day, 12, 15),
         endTime: DateTime(DateTime.now().year, DateTime.now().month,
             DateTime.now().day, 13, 15),
-        description: "busy",
+        dateTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day),
       ),
       CleanCalendarEvent(
         'Busy',
@@ -1129,7 +1163,8 @@ class _CalendarAppState extends State<CalendarApp> {
             DateTime.now().day, 13, 15),
         endTime: DateTime(DateTime.now().year, DateTime.now().month,
             DateTime.now().day, 15, 15),
-        description: "busy",
+        dateTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day),
       ),
       CleanCalendarEvent(
         'Busy',
@@ -1137,7 +1172,8 @@ class _CalendarAppState extends State<CalendarApp> {
             DateTime.now().day, 15, 15),
         endTime: DateTime(DateTime.now().year, DateTime.now().month,
             DateTime.now().day, 16, 15),
-        description: "busy",
+        dateTime: DateTime(DateTime.now().year, DateTime.now().month,
+            DateTime.now().day),
       ),
     ]
   };
