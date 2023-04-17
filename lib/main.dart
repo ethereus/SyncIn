@@ -1272,35 +1272,49 @@ void initState() {
         ],
       ),
       body: SafeArea(
-        child: Container(
-          child: Calendar(
-            startOnMonday: true,
-            selectedColor: Colors.blue,
-            todayColor: Colors.red,
-            eventColor: Colors.green,
-            eventDoneColor: Colors.amber,
-            bottomBarColor: Colors.deepOrange,
-            onRangeSelected: (range) {
-              print('selected Day ${range.from},${range.to}');
-            },
-            onDateSelected: (date) {
-              return _handleData(date);
-            },
-            events: events,
-            isExpanded: true,
-            dayOfWeekStyle: TextStyle(
-              fontSize: 15,
-              color: Colors.white,
-              fontWeight: FontWeight.w100,
+        child: Column(
+          children: [
+            Calendar(
+              startOnMonday: true,
+              selectedColor: Colors.blue,
+              todayColor: Colors.red,
+              eventColor: Colors.green,
+              eventDoneColor: Colors.amber,
+              bottomBarColor: Colors.deepOrange,
+              onRangeSelected: (range) {
+                print('selected Day ${range.from},${range.to}');
+              },
+              onDateSelected: (date) {
+                return _handleData(date);
+              },
+              events: events,
+              isExpanded: true,
+              dayOfWeekStyle: TextStyle(
+                fontSize: 15,
+                color: Colors.white,
+                fontWeight: FontWeight.w100,
+              ),
+              bottomBarTextStyle: TextStyle(
+                color: Colors.white,
+              ),
+              hideBottomBar: false,
+              hideArrows: false,
+              weekDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
             ),
-            bottomBarTextStyle: TextStyle(
-              color: Colors.white,
+            Expanded(
+              child: ListView.builder(
+                itemCount: events.length,
+                itemBuilder: (context, index) {
+                  // Customize the list item as needed using events[index]
+                  return ListTile(
+                    title: Text(events[index].toString()),
+                    // Add more widgets for additional data in the list item
+                  );
+                },
+              ),
             ),
-            hideBottomBar: false,
-            hideArrows: false,
-            weekDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-          ),
-        ),
+          ],
+        )
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.orange,
