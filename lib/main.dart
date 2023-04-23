@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -12,10 +11,7 @@ import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart';
 import 'dart:async';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_background/flutter_background.dart';
 
 late SharedPreferences prefs;
@@ -101,89 +97,6 @@ void startBackgroundProcess(Map<DateTime, List<CleanCalendarEvent>> events) {
     });
   });
 }
-
-
-//classes here
-
-class EventDatabase {
-  static const _dbName = 'events.db';
-  static const _eventsTable = 'events';
-
-  // Open the local database
-  static Future<Database> _openDatabase() async {
-    final dbPath = await getDatabasesPath();
-    final path = join(dbPath, _dbName);
-
-    return openDatabase(path, version: 1, onCreate: (db, version) async {
-      await db.execute('''
-        CREATE TABLE $_eventsTable (
-          description TEXT,
-          startTime TEXT,
-          endTime TEXT,
-          dateTime TEXT
-        )
-      ''');
-    });
-  }
-
-  // Save the events map to the local database, ignoring duplicates
-static Future<void> saveEvents(Map<DateTime, List<CleanCalendarEvent>> events) async {
-  final db = await _openDatabase();
-  await db.transaction((txn) async {
-    events.forEach((dateTime, eventsList) async {
-      for (final event in eventsList) {
-        await txn.insert(
-          _eventsTable,
-          {
-            'description': event.description,
-            'startTime': event.startTime.toIso8601String(),
-            'endTime': event.endTime.toIso8601String(),
-            'dateTime': dateTime.toIso8601String(),
-          },
-          conflictAlgorithm: ConflictAlgorithm.ignore,
-        );
-      }
-    });
-
-  });
-}
-
-
-  
-
-  // Retrieve the events map from the local database
-  static Future<Map<DateTime, List<CleanCalendarEvent>>> getEvents() async {
-    final db = await _openDatabase();
-    final results = await db.query(_eventsTable);
-    final events = <DateTime, List<CleanCalendarEvent>>{};
-    for (final result in results) {
-      final startTime = result['startTime'];
-      final endTime = result['endTime'];
-      final description = result['description'];
-
-      CleanCalendarEvent event = CleanCalendarEvent('',
-        description: description as String,
-        startTime: DateTime.parse(startTime as String),
-        endTime: DateTime.parse(endTime as String),
-
-      );
-      var dateTime = result['dateTime'];
-      if (dateTime is String) {
-        dateTime = DateTime.parse(dateTime);
-        if (!events.containsKey(dateTime)) {
-          events[dateTime as DateTime] = []; // explicitly cast as DateTime
-        }
-}
-
-
-
-    events[dateTime]!.add(event);
-  }
-  return events;
-}
-
-  }
-
 
 class GroupChatScreen extends StatefulWidget {
   @override
@@ -1232,15 +1145,6 @@ class _CalendarAppState extends State<CalendarApp> {
 void initState() {
   super.initState();
   startBackgroundProcess(events);
-  EventDatabase.saveEvents(events);
-  EventDatabase.getEvents().then((dbEvents) {
-    setState(() {
-      events = dbEvents;
-      selectedEvent = events[selectedDay] ?? [];
-    });
-  }).catchError((error) {
-    print('Error fetching events: $error');
-  });
 }
 
   Future<void> uploadEventDataToFirebase(
@@ -1518,13 +1422,9 @@ void showAddButton(Map<DateTime, List<CleanCalendarEvent>> events, {required Bui
 
                   events[selectedDate]!.add(newEvent);
 
-                  EventDatabase.saveEvents(calendarEvent);
-
                 } else {
 
                   events[selectedDate] = [newEvent];
-
-                  EventDatabase.saveEvents(calendarEvent);
                 }
                 // Close the modal bottom sheet
                 Navigator.pop(context);
