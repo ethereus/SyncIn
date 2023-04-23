@@ -1,3 +1,11 @@
+//
+// main.dart
+// SyncIn
+//
+// Created by ethereus on 13/02/23
+// Copyright © 2023 ethereus. All rights reserved.
+//
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
