@@ -4,8 +4,11 @@
 
 Welcome to SyncIn,
 
-Our product ensures students are getting the most out of their time. When students use socialising apps, such as snapchat, Instagram or WhatsApp it becomes increasingly more difficult to stay on topic with studying or focus in classes. ​
-Our app offers an alternative, where a student can still arrange meet-ups and events with friends but it is fit around their studies. SyncIn helps avoid arranging events while some people would be busy with work or classes, allowing them to stay focused without the worry of missing out.
+A calendar app designed for students to make arranging evens easier. SyncIn shows you when your friends are free, and lets you chat to with your friends while making plans. You can invite friends into your group via group code and then other members of the group can chat with each other and see when they  are free. 
+
+Working features: see when friends are free based on their calendar events, chat to friends through the app, sign in via google.
+
+Currently broken: importing calendar events from .ics files, making created events stay through app close. 
 
 # Important
 
