@@ -4,7 +4,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_clean_calendar/flutter_clean_calendar.dart';
-import 'package:flutter/services.dart' show Color, rootBundle;
+import 'package:flutter/services.dart';
 import 'package:icalendar_parser/icalendar_parser.dart';
 import 'dart:math' as math;
 import 'package:file_picker/file_picker.dart';
@@ -66,7 +66,7 @@ void startBackgroundProcess(Map<DateTime, List<CleanCalendarEvent>> events) {
   DateTime now = DateTime.now();
 
   bool isInside = isInsideEvent(now, events);
-  String status = isInside ? "free" : "busy";
+  String status = isInside ? "busy" : "free";
 
   print("User is currently $status");
 
@@ -96,6 +96,41 @@ void startBackgroundProcess(Map<DateTime, List<CleanCalendarEvent>> events) {
       //print("Data pushed to Firebase Realtime Database");
     });
   });
+}
+
+class CopyableText extends StatelessWidget {
+  final String text;
+  final TextStyle style;
+  final TextAlign textAlign;
+  final int maxLines;
+
+  CopyableText({
+    Key key = const ValueKey('default_key'),
+    required this.text,
+    this.style = const TextStyle(),
+    this.textAlign = TextAlign.center,
+    this.maxLines = 13,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Clipboard.setData(ClipboardData(text: text));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Copied to clipboard")),
+        );
+      },
+      child: SizedBox(
+        child: SelectableText(
+          text,
+          style: style,
+          textAlign: textAlign,
+          maxLines: maxLines,
+        ),
+      ),
+    );
+  }
 }
 
 class GroupChatScreen extends StatefulWidget {
@@ -421,6 +456,170 @@ class Authentication {
   }
 }
 
+class GroupChoiceScreen extends StatefulWidget {
+  @override
+  _GroupChoiceScreenState createState() => _GroupChoiceScreenState();
+}
+
+class _GroupChoiceScreenState extends State<GroupChoiceScreen> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(
+                            builder: (context) => JoinGroupScreen(),
+                          ),
+                         );
+                },
+                child: Text(
+                  'Join a Group',
+                  style: TextStyle(
+                    fontSize: 24.0,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  primary: Colors.orange,
+                  padding: EdgeInsets.symmetric(
+                    vertical: 16.0,
+                    horizontal: 32.0,
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(
+                            builder: (context) => GroupCodeScreen(),
+                          ),
+                         );
+                },
+                child: Text(
+                  'Create a Group',
+                  style: TextStyle(
+                    fontSize: 24.0,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  primary: Colors.orange,
+                  padding: EdgeInsets.symmetric(
+                    vertical: 16.0,
+                    horizontal: 32.0,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class GroupCodeScreen extends StatefulWidget {
+  @override
+  _GroupCodeScreenState createState() => _GroupCodeScreenState();
+}
+
+class _GroupCodeScreenState extends State<GroupCodeScreen> {
+  String _groupCode = '';
+
+  final _auth = FirebaseAuth.instance;
+  final _database = FirebaseDatabase.instance.reference();
+
+  @override
+  void initState() {
+    super.initState();
+    _groupCode = _generateGroupCode();
+  }
+
+  String _generateGroupCode() {
+    const String chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+    math.Random rnd = new math.Random();
+    String code = "";
+    for (var i = 0; i < 13; i++) {
+      code += chars[rnd.nextInt(chars.length)];
+    }
+    return code.toUpperCase();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Group Code'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'Your group code:',
+              style: TextStyle(
+                fontSize: 24.0,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 16.0),
+            CopyableText(
+                text: '$_groupCode',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            SizedBox(height: 16.0),
+            Text(
+              'You can view this in the logout screen at any time',
+              style: TextStyle(
+                fontSize: 18.0,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+            SizedBox(height: 32.0),
+            ElevatedButton(
+              onPressed: () {
+
+                prefs.setString('code', _groupCode);
+
+                final String name = _auth.currentUser!.displayName.toString();
+
+                _database.child('group_chat_messages/$_groupCode').push().set({
+                  'sender': "SyncIn",
+                  'message': "$name has joined the group.",
+                  'timestamp': ServerValue.timestamp,
+                });
+
+                Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(
+                            builder: (context) => CalendarApp(),
+                          ),
+                         );
+              },
+              child: Text('Join'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class JoinGroupScreen extends StatefulWidget {
   @override
   _JoinGroupScreenState createState() => _JoinGroupScreenState();
@@ -574,7 +773,7 @@ class _GoogleSignInButtonState extends State<GoogleSignInButton> {
                 if (user != null && code == '.') {
                   Navigator.of(context).pushReplacement(
                     MaterialPageRoute(
-                      builder: (context) => JoinGroupScreen(),
+                      builder: (context) => GroupChoiceScreen(),
                     ),
                   );
                 }
@@ -706,6 +905,8 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
   late User _user;
   bool _isSigningOut = false;
 
+  String code = '';
+
   Route _routeToSignInScreen() {
     return PageRouteBuilder(
       pageBuilder: (context, animation, secondaryAnimation) => SignInScreen(),
@@ -729,6 +930,12 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
   void initState() {
     _user = widget._user;
 
+    String? savedCode = prefs.getString('code');
+
+    if (savedCode != null) {
+      code = savedCode;
+    };
+
     super.initState();
   }
 
@@ -740,6 +947,16 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
         elevation: 0,
         backgroundColor: Colors.blueGrey,
         title: const Text('Sign Out'),
+        leading: IconButton(
+          icon: Image.asset('assets/images/calendar.png'),
+          onPressed: () {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => CalendarApp(),
+              ),
+            );
+          },
+        ),
       ),
       body: SafeArea(
         child: Padding(
@@ -779,7 +996,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
               Text(
                 'Hello',
                 style: TextStyle(
-                  color: Colors.grey,
+                  color: Colors.white,
                   fontSize: 26,
                 ),
               ),
@@ -787,7 +1004,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
               Text(
                 _user.displayName!,
                 style: TextStyle(
-                  color: Colors.yellow,
+                  color: Colors.white,
                   fontSize: 26,
                 ),
               ),
@@ -795,7 +1012,25 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
               Text(
                 '( ${_user.email!} )',
                 style: TextStyle(
-                  color: Colors.orange,
+                  color: Colors.white,
+                  fontSize: 20,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              SizedBox(height: 8.0),
+              Text(
+                'Group code:',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              SizedBox(height: 8.0),
+              CopyableText(
+                text: '$code',
+                style: TextStyle(
+                  color: Colors.white,
                   fontSize: 20,
                   letterSpacing: 0.5,
                 ),
@@ -804,7 +1039,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
               Text(
                 'You are now signed in using your Google account. To sign out of your account, click the "Sign Out" button below.',
                 style: TextStyle(
-                    color: Colors.grey.withOpacity(0.8),
+                    color: Colors.white.withOpacity(0.8),
                     fontSize: 14,
                     letterSpacing: 0.2),
               ),
@@ -1515,4 +1750,3 @@ void showFreeButton({required BuildContext context}) {
     );
   });
 }
-
