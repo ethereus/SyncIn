@@ -14,12 +14,16 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'dart:async';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter_background/flutter_background.dart';
 
 late SharedPreferences prefs;
 void main() async {
 
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  await FlutterBackground.initialize();
   prefs = await SharedPreferences.getInstance();
   runApp(MyApp());
 }
@@ -37,6 +41,65 @@ class MyApp extends StatelessWidget {
       home: SignInScreen(),
     );
   }
+}
+
+bool isInsideEvent(DateTime dateTime, Map<DateTime, List<CleanCalendarEvent>> events) {
+  for (final List<CleanCalendarEvent> eventList in events.values) {
+    for (final CleanCalendarEvent event in eventList) {
+      // Check if the provided DateTime is between the start and end times of the event
+      if (dateTime.isAfter(event.startTime) && dateTime.isBefore(event.endTime)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+
+void startBackgroundProcess(Map<DateTime, List<CleanCalendarEvent>> events) {
+  final _auth = FirebaseAuth.instance;
+
+  String code = '';
+
+  String? savedCode = prefs.getString('code');
+
+  if (savedCode != null) {
+    code = savedCode;
+  }
+
+  DateTime now = DateTime.now();
+
+  bool isInside = isInsideEvent(now, events);
+  String status = isInside ? "free" : "busy";
+
+  print("User is currently $status");
+
+  // Set the callback function that will be called by the plugin every time the background process is triggered.
+  FlutterBackground.enableBackgroundExecution().then((value) {
+
+    //change to minutes: 15 for release
+
+    Timer.periodic(Duration(minutes: 15), (timer) async {
+      // Get a reference to the Firebase Realtime Database instance
+      DatabaseReference reference = FirebaseDatabase.instance.reference();
+
+    String displayName = _auth.currentUser!.displayName.toString();
+    String freeTimePath = 'free_time/' + code;
+
+    // Remove existing entry
+    await reference.child(freeTimePath + displayName).remove();
+
+    // Push new data to the database
+    //change to user code not name
+    await reference.child(freeTimePath + displayName).set({
+      displayName: status,
+      // add your data here
+    });
+
+      // Log the success of the push operation
+      print("Data pushed to Firebase Realtime Database");
+    });
+  });
 }
 
 
@@ -1168,6 +1231,7 @@ class _CalendarAppState extends State<CalendarApp> {
   @override
 void initState() {
   super.initState();
+  startBackgroundProcess(events);
   EventDatabase.saveEvents(events);
   EventDatabase.getEvents().then((dbEvents) {
     setState(() {
@@ -1272,49 +1336,35 @@ void initState() {
         ],
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            Calendar(
-              startOnMonday: true,
-              selectedColor: Colors.blue,
-              todayColor: Colors.red,
-              eventColor: Colors.green,
-              eventDoneColor: Colors.amber,
-              bottomBarColor: Colors.deepOrange,
-              onRangeSelected: (range) {
-                print('selected Day ${range.from},${range.to}');
-              },
-              onDateSelected: (date) {
-                return _handleData(date);
-              },
-              events: events,
-              isExpanded: true,
-              dayOfWeekStyle: TextStyle(
-                fontSize: 15,
-                color: Colors.white,
-                fontWeight: FontWeight.w100,
-              ),
-              bottomBarTextStyle: TextStyle(
-                color: Colors.white,
-              ),
-              hideBottomBar: false,
-              hideArrows: false,
-              weekDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        child: Container(
+          child: Calendar(
+            startOnMonday: true,
+            selectedColor: Colors.blue,
+            todayColor: Colors.red,
+            eventColor: Colors.green,
+            eventDoneColor: Colors.amber,
+            bottomBarColor: Colors.deepOrange,
+            onRangeSelected: (range) {
+              print('selected Day ${range.from},${range.to}');
+            },
+            onDateSelected: (date) {
+              return _handleData(date);
+            },
+            events: events,
+            isExpanded: true,
+            dayOfWeekStyle: TextStyle(
+              fontSize: 15,
+              color: Colors.white,
+              fontWeight: FontWeight.w100,
             ),
-            Expanded(
-              child: ListView.builder(
-                itemCount: events.length,
-                itemBuilder: (context, index) {
-                  // Customize the list item as needed using events[index]
-                  return ListTile(
-                    title: Text(events[index].toString()),
-                    // Add more widgets for additional data in the list item
-                  );
-                },
-              ),
+            bottomBarTextStyle: TextStyle(
+              color: Colors.white,
             ),
-          ],
-        )
+            hideBottomBar: false,
+            hideArrows: false,
+            weekDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+          ),
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.orange,
