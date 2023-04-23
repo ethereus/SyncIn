@@ -1540,34 +1540,79 @@ void showAddButton(Map<DateTime, List<CleanCalendarEvent>> events, {required Bui
 void showFreeButton({required BuildContext context}) {
   String title = '';
 
-  // Show modal bottom sheet for free status
-  showModalBottomSheet(
-    context: context,
-    builder: (BuildContext context) {
-      return Container(
-        height: 350,
-        child: Column(
-          children: [
-            Column(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
+  final databaseReference = FirebaseDatabase.instance.reference();
 
-                Text('Free friends will appear here'),
-      
-              ],
-            ),
-            ElevatedButton(
-              child: Text("Close"),
-              onPressed: () {
+  // Create a reference to the freeTimePath node
+  String freeTimePath = "/free_time/";
 
-                // Close the modal bottom sheet
-                Navigator.pop(context);
+  // Create a list to store the displayName and status entries
+  List displayNamesAndStatuses = [];
 
-              },
-            ),
-          ],
-        ),
-      );
-    },
-  );
+  // Retrieve the data from the database
+  databaseReference.child(freeTimePath).onValue.listen((event) {
+    // Get the data from the event snapshot
+    DataSnapshot snapshot = event.snapshot;
+    Map<dynamic, dynamic> data = snapshot.value as Map<dynamic, dynamic>; // Cast value to Map<dynamic, dynamic>
+    if (data != null) {
+      // Loop through the child nodes of the data
+      data.forEach((key, value) {
+        // Get the displayName and status values
+        String displayName = key.toString();
+        String status = value.toString();
+        // Add the displayName and status values to the list
+        if (status != null) {
+          displayNamesAndStatuses.add({
+            displayName: status,
+          });
+        }
+      });
+    }
+
+    // Show modal bottom sheet for free status
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Container(
+          height: 350,
+          child: Column(
+            children: [
+              Text("Friends List:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24.0)),
+              Flexible(
+                child: ListView.builder(
+                  physics: NeverScrollableScrollPhysics(),
+                  shrinkWrap: true,
+                  itemCount: displayNamesAndStatuses.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    // Get the current name and status from the list
+                    Map<String, dynamic> entry = displayNamesAndStatuses[index];
+                    String name = entry.keys.first;
+                    String status = entry.values.first;
+                    // Split the name and status by the ":" separator
+                    List<String> parts = name.split(':');
+                    String statusPart = status;
+                    if (parts.length > 1) {
+                      statusPart = parts[1];
+                    }
+                    String statusString = statusPart.substring(1, statusPart.length - 1);
+                    // Build the widget for the name and status pair
+                    return ListTile(
+                      title: Text(statusString, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18.0)),
+                    );
+                  },
+                ),
+              ),
+              ElevatedButton(
+                child: Text("Close"),
+                onPressed: () {
+                  // Close the modal bottom sheet
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  });
 }
+
