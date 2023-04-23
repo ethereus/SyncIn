@@ -11,7 +11,7 @@ How to use:
 - open your simulator from visual studio
 - run "flutter run" from the main folder
 
-**iOS**
+**iOS (currently broken as background processes aren't yet implemented)**
 
 - make sure flutter is installed
 - install cocoa pods
