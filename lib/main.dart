@@ -90,14 +90,14 @@ void startBackgroundProcess(Map<DateTime, List<CleanCalendarEvent>> events) {
     await reference.child(freeTimePath + displayName).remove();
 
     // Push new data to the database
-    //change to user code not name
+    //change to user code not name for release
     await reference.child(freeTimePath + displayName).set({
       displayName: status,
       // add your data here
     });
 
       // Log the success of the push operation
-      print("Data pushed to Firebase Realtime Database");
+      //print("Data pushed to Firebase Realtime Database");
     });
   });
 }
@@ -420,7 +420,7 @@ class Authentication {
 
     User? user = FirebaseAuth.instance.currentUser;
 
-    //uncomment to enable automatic signing in (should remove signing out button from user info if we do this)
+    //uncomment to enable automatic sign in (should remove signing out button from user info if we do this)
 
     //if (user != null) {
     //Navigator.of(context).pushReplacement(
@@ -1298,7 +1298,7 @@ void initState() {
     //uploadEventDataToFirebase(findUserFreeTime(events));
     return Scaffold(
       appBar: AppBar(
-        title: Text('Calendar'),
+        title: Text('SyncIn'),
         leading: IconButton(
           icon: Image.asset('assets/images/upload.png'),
           onPressed: () {
@@ -1366,13 +1366,33 @@ void initState() {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.orange,
-        onPressed: () {
-          showAddButton(events, context: context);
-        },
-        child: Icon(Icons.add),
-      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        floatingActionButton: Stack(
+          children: <Widget>[
+            Positioned(
+              left: 10.0,
+              bottom: 10.0,
+              child: FloatingActionButton(
+                backgroundColor: Colors.orange,
+                onPressed: () {
+                  showAddButton(events, context: context);
+                },
+                child: Icon(Icons.add),
+              ),
+            ),
+            Positioned(
+              right: 10.0,
+              bottom: 10.0,
+              child: FloatingActionButton(
+                backgroundColor: Colors.orange,
+                onPressed: () {
+                  showFreeButton(context: context);
+                },
+                child: Icon(Icons.group),
+              ),
+            ),
+          ],
+        ),
     );
   }
 }
@@ -1508,6 +1528,41 @@ void showAddButton(Map<DateTime, List<CleanCalendarEvent>> events, {required Bui
                 }
                 // Close the modal bottom sheet
                 Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+void showFreeButton({required BuildContext context}) {
+  String title = '';
+
+  // Show modal bottom sheet for free status
+  showModalBottomSheet(
+    context: context,
+    builder: (BuildContext context) {
+      return Container(
+        height: 350,
+        child: Column(
+          children: [
+            Column(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+
+                Text('Free friends will appear here'),
+      
+              ],
+            ),
+            ElevatedButton(
+              child: Text("Close"),
+              onPressed: () {
+
+                // Close the modal bottom sheet
+                Navigator.pop(context);
+
               },
             ),
           ],
