@@ -473,6 +473,7 @@ class _GroupChoiceScreenState extends State<GroupChoiceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.blueGrey,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -568,6 +569,7 @@ class _GroupCodeScreenState extends State<GroupCodeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.blueGrey,
       appBar: AppBar(
         title: Text('Group Code'),
       ),
