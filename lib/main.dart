@@ -1685,10 +1685,18 @@ void showAddButton(Map<DateTime, List<CleanCalendarEvent>> events, {required Bui
 void showFreeButton({required BuildContext context}) {
   String title = '';
 
+  String code = '';
+
+  String? savedCode = prefs.getString('code');
+
+  if (savedCode != null) {
+    code = savedCode;
+  }
+
   final databaseReference = FirebaseDatabase.instance.reference();
 
   // Create a reference to the freeTimePath node
-  String freeTimePath = "/free_time/";
+  String freeTimePath = "free_time/";
 
   // Create a list to store the displayName and status entries
   List displayNamesAndStatuses = [];
@@ -1701,16 +1709,26 @@ void showFreeButton({required BuildContext context}) {
     if (data != null) {
       // Loop through the child nodes of the data
       data.forEach((key, value) {
-        // Get the displayName and status values
-        String displayName = key.toString();
-        String status = value.toString();
-        // Add the displayName and status values to the list
-        if (status != null) {
-          displayNamesAndStatuses.add({
-            displayName: status,
-          });
+
+        print(key);
+
+        if (key.contains(code)) {
+
+          print("key found");
+          // Get the displayName and status values
+          String displayName = key.toString();
+          String status = value.toString();
+          print(displayName);
+          print(status);
+          // Add the displayName and status values to the list
+          if (status != null) {
+            displayNamesAndStatuses.add({
+              displayName: status,
+            });
+          }
         }
-      });
+      }
+      );
     }
 
     // Show modal bottom sheet for free status
