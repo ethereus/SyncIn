@@ -4,7 +4,7 @@
 
 Welcome to SyncIn,
 
-A calendar app designed for students to make arranging evens easier. SyncIn shows you when your friends are free, and lets you chat to with your friends while making plans. You can invite friends into your group via group code and then other members of the group can chat with each other and see when they  are free. 
+A calendar app designed for students to make arranging evens easier. SyncIn shows you when your friends are free, and lets you chat with your friends while making plans. You can invite friends into your group via group code and then other members of the group can chat with each other and see when they are free. 
 
 Working features: see when friends are free based on their calendar events, chat to friends through the app, sign in via google.
 
